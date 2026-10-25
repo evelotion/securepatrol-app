@@ -33,7 +33,7 @@ export function CheckpointsClient({
         </p>
       ) : null}
 
-      <section className="glass rounded-3xl p-4 sm:p-5">
+      <section className="glass rounded-2xl p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">Daftar Titik Patroli</h2>
           <button
@@ -197,7 +197,7 @@ function CheckpointFormModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="glass-strong max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl p-5 sm:p-6">
+      <div className="glass-strong max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="section-title">
             {checkpoint ? "Edit Checkpoint" : "Tambah Checkpoint"}
@@ -325,7 +325,7 @@ function PrintLabel({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="glass-strong w-full max-w-xs rounded-3xl p-5">
+      <div className="glass-strong w-full max-w-xs rounded-2xl p-5">
         <div className="no-print mb-4 flex items-center justify-between">
           <h2 className="section-title">Label Checkpoint</h2>
           <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>

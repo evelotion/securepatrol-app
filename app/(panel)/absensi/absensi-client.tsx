@@ -99,7 +99,7 @@ function AbsenCard({
 
   if (disabled) {
     return (
-      <section className="glass rounded-3xl p-5 sm:p-6">
+      <section className="glass rounded-2xl p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-title">{label}</h2>
           <span className="badge badge-slate">Nonaktif</span>
@@ -132,7 +132,7 @@ function AbsenCard({
   }
 
   return (
-    <section className="glass rounded-3xl p-5 sm:p-6">
+    <section className="glass rounded-2xl p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="section-title">{label}</h2>
         <span className="badge badge-amber">Menunggu</span>

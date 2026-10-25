@@ -7,7 +7,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <div className="glass rounded-3xl p-8">
+      <div className="glass rounded-2xl p-8">
         <h1 className="page-title">SecurePatrol</h1>
         <p className="page-sub mt-2">
           Absensi & patroli sekuriti berbasis QR & GPS.

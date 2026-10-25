@@ -2,7 +2,6 @@ import { Suspense } from "react";
 
 import { getDashboardHariIni } from "@/lib/data";
 import { formatJam } from "@/lib/format";
-import { ROLE_BADGE, ROLE_LABEL } from "@/lib/roles";
 
 export const metadata = { title: "Dashboard" };
 
@@ -17,13 +16,13 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-5">
-      <div className="skeleton h-24 w-full rounded-3xl" />
+      <div className="skeleton h-24 w-full rounded-2xl" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="skeleton h-28 rounded-3xl" />
+          <div key={i} className="skeleton h-28 rounded-2xl" />
         ))}
       </div>
-      <div className="skeleton h-64 w-full rounded-3xl" />
+      <div className="skeleton h-64 w-full rounded-2xl" />
     </div>
   );
 }
@@ -58,14 +57,10 @@ async function Dashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="glass rounded-3xl p-5 sm:p-6">
+      <section className="glass rounded-2xl p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <span className={`badge ${ROLE_BADGE[actor.role]}`}>
-              {ROLE_LABEL[actor.role]}
-              {actor.regu ? ` · ${actor.regu}` : ""}
-            </span>
-            <h1 className="page-title mt-3">Selamat datang, {actor.nama} 👋</h1>
+            <h1 className="page-title">Selamat datang, {actor.nama}</h1>
             <p className="page-sub mt-1">
               {isTim
                 ? "Ringkasan kehadiran & patroli tim hari ini."
@@ -81,7 +76,7 @@ async function Dashboard() {
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((card) => (
-          <article key={card.label} className="glass rounded-3xl p-4 sm:p-5">
+          <article key={card.label} className="glass rounded-2xl p-4 sm:p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               {card.label}
             </p>
@@ -92,7 +87,7 @@ async function Dashboard() {
       </section>
 
       {isTim && absensi.length > 0 ? (
-        <section className="glass rounded-3xl p-5 sm:p-6">
+        <section className="glass rounded-2xl p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Status absensi tim</h2>
             <span className="badge badge-indigo">{absensi.length} orang</span>
@@ -135,7 +130,7 @@ async function Dashboard() {
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <article className="glass rounded-3xl p-5 sm:p-6">
+        <article className="glass rounded-2xl p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Progres patroli</h2>
             <span className="badge badge-amber">
@@ -180,7 +175,7 @@ async function Dashboard() {
           </ul>
         </article>
 
-        <article className="glass rounded-3xl p-5 sm:p-6">
+        <article className="glass rounded-2xl p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Kunjungan terbaru</h2>
             <span className="badge badge-slate">{logs.length} log</span>
@@ -219,7 +214,7 @@ async function Dashboard() {
       </section>
 
       {actor.role === "SUPER_ADMIN" ? (
-        <section className="glass rounded-3xl p-5 sm:p-6">
+        <section className="glass rounded-2xl p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="section-title">Kelola data master</h2>
             {stats ? (

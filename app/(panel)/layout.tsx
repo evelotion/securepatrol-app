@@ -1,106 +1,83 @@
 import { Suspense } from "react";
-import Link from "next/link";
 
 import { getCurrentUser } from "@/lib/auth";
 import { FIELD_ROLES, ROLE_LABEL } from "@/lib/roles";
 
-import { LogoutButton } from "./logout-button";
+import { AppNav, type NavItem } from "./app-nav";
 
-/** Shell aplikasi setelah login. Membaca sesi di dalam Suspense (Cache Components). */
+/**
+ * Shell aplikasi setelah login.
+ * Navbar atas dihapus: desktop pakai sidebar statis di kiri (w-64),
+ * mobile pakai app bar tipis + hamburger drawer (lihat AppNav).
+ * Ses user dibaca di dalam Suspense (Cache Components).
+ */
 export default function PanelLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 glass-strong border-b border-white/70">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <Suspense fallback={<NavSkeleton />}>
-            <NavBar />
-          </Suspense>
-        </div>
-      </header>
+    <div className="min-h-dvh">
+      <Suspense fallback={<NavFallback />}>
+        <PanelNav />
+      </Suspense>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
-        {children}
-      </main>
+      {/* Konten digeser sebaris sidebar desktop. */}
+      <div className="lg:pl-64">
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
 
-function NavSkeleton() {
-  return (
-    <>
-      <div className="skeleton h-8 w-32 rounded-lg" />
-      <div className="skeleton h-8 w-40 rounded-lg" />
-    </>
-  );
-}
-
-async function NavBar() {
+async function PanelNav() {
   const user = await getCurrentUser();
-  const isMaster = user.role === "SUPER_ADMIN";
-  const isField = FIELD_ROLES.includes(user.role);
+
+  const items: NavItem[] = [{ href: "/dashboard", label: "Dashboard" }];
+  if (FIELD_ROLES.includes(user.role)) {
+    items.push(
+      { href: "/absensi", label: "Absensi" },
+      { href: "/patroli", label: "Patroli" },
+    );
+  }
+  if (user.role === "SUPER_ADMIN") {
+    items.push(
+      { href: "/master/users", label: "Master User" },
+      { href: "/master/checkpoints", label: "Master Checkpoint" },
+    );
+  }
 
   return (
-    <>
-      <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 text-sm font-bold text-white shadow-md shadow-indigo-500/30"
-        >
-          SP
-        </Link>
-        <nav className="flex items-center gap-1">
-          <NavLink href="/dashboard">Dashboard</NavLink>
-          {isField ? (
-            <>
-              <NavLink href="/absensi">Absensi</NavLink>
-              <NavLink href="/patroli">Patroli</NavLink>
-            </>
-          ) : null}
-          {isMaster ? (
-            <>
-              <NavLink href="/master/users">Users</NavLink>
-              <NavLink href="/master/checkpoints">Checkpoint</NavLink>
-            </>
-          ) : null}
-        </nav>
-      </div>
-
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="hidden text-right sm:block">
-          <p className="text-sm font-semibold leading-tight text-slate-800">
-            {user.nama}
-          </p>
-          <p className="text-xs leading-tight text-slate-500">
-            {ROLE_LABEL[user.role]}
-            {user.regu ? ` · ${user.regu}` : ""}
-          </p>
-        </div>
-        <span className="badge badge-indigo sm:hidden">
-          {ROLE_LABEL[user.role]}
-        </span>
-        <LogoutButton />
-      </div>
-    </>
+    <AppNav
+      items={items}
+      user={{
+        nama: user.nama,
+        roleLabel: ROLE_LABEL[user.role],
+        regu: user.regu,
+      }}
+    />
   );
 }
 
-function NavLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
+/** Shell sidebar/app bar selama sesi dibaca — tanpa layout shift. */
+function NavFallback() {
   return (
-    <Link
-      href={href}
-      className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-white/70 hover:text-indigo-700 sm:px-3"
-    >
-      {children}
-    </Link>
+    <>
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
+        <div className="px-5 pt-5 pb-4">
+          <div className="skeleton h-8 w-32 rounded-lg" />
+        </div>
+        <div className="flex flex-col gap-3 px-3">
+          <div className="skeleton h-5 w-full rounded" />
+          <div className="skeleton h-5 w-4/5 rounded" />
+          <div className="skeleton h-5 w-3/5 rounded" />
+        </div>
+      </aside>
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 lg:hidden">
+        <div className="skeleton h-5 w-28 rounded" />
+      </div>
+    </>
   );
 }

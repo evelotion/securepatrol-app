@@ -18,7 +18,7 @@ function LogoutSubmit() {
   return (
     <button
       type="submit"
-      className="btn btn-ghost btn-sm"
+      className="btn btn-ghost btn-sm w-full"
       disabled={pending}
       title="Keluar dari sesi"
     >

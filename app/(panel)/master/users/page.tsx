@@ -11,8 +11,8 @@ export default function MasterUsersPage() {
     <Suspense
       fallback={
         <div className="flex flex-col gap-4">
-          <div className="skeleton h-20 w-full rounded-3xl" />
-          <div className="skeleton h-72 w-full rounded-3xl" />
+          <div className="skeleton h-20 w-full rounded-2xl" />
+          <div className="skeleton h-72 w-full rounded-2xl" />
         </div>
       }
     >
@@ -26,7 +26,7 @@ async function UsersSection() {
 
   return (
     <div className="flex flex-col gap-5">
-      <header className="glass rounded-3xl p-5 sm:p-6">
+      <header className="glass rounded-2xl p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="page-title">Master User</h1>

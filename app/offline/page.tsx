@@ -6,7 +6,7 @@ export const metadata = {
 export default function OfflinePage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="glass rounded-3xl p-8 max-w-sm">
+      <div className="glass rounded-2xl p-8 max-w-sm">
         <div className="text-4xl">📡</div>
         <h1 className="mt-3 text-xl font-semibold text-slate-800">
           Anda sedang offline

@@ -48,7 +48,7 @@ export function PatroliClient({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {/* Kolom kiri: scanner + bukti */}
-      <section className="glass rounded-3xl p-5 sm:p-6">
+      <section className="glass rounded-2xl p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-title">Scan Titik</h2>
           <span className={`badge ${kode ? "badge-green" : "badge-slate"}`}>
@@ -158,7 +158,7 @@ export function PatroliClient({
 
       {/* Kolom kanan: rute + log hari ini */}
       <div className="flex flex-col gap-4">
-        <section className="glass rounded-3xl p-5 sm:p-6">
+        <section className="glass rounded-2xl p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Rute Hari Ini</h2>
             <span className="badge badge-indigo">{checkpoints.length} titik</span>
@@ -198,7 +198,7 @@ export function PatroliClient({
           </ul>
         </section>
 
-        <section className="glass rounded-3xl p-5 sm:p-6">
+        <section className="glass rounded-2xl p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Log Kunjungan</h2>
             <span className="badge badge-slate">{logs.length} hari ini</span>
