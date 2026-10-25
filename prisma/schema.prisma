@@ -1,0 +1,131 @@
+// SecurePatrol — Skema database (Blok 1)
+// PRD: docs/PRD-SecurePatrol.md bagian 8 "Data yang Disimpan"
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Role pengguna sesuai PRD bagian 2.
+enum Role {
+  SUPER_ADMIN
+  CHIEF_SECURITY
+  DANRU
+  SECURITY
+}
+
+model User {
+  id        String   @id @default(cuid())
+  nama      String
+  email     String   @unique
+  username  String?  @unique
+  /// Hash scrypt "salt:hash" — tidak pernah dikirim ke client.
+  password  String
+  role      Role     @default(SECURITY)
+  /// Tim/regu (mis. "Regu A").
+  regu      String?
+  /// Soft delete: true = aktif, false = dinonaktifkan (tidak pernah hapus permanen).
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sessions    Session[]
+  absensi     Absensi[]
+  patroliLogs PatroliLog[]
+  auditLogs   AuditLog[]
+
+  @@map("User")
+}
+
+model Checkpoint {
+  id          String   @id @default(cuid())
+  /// Nama titik patroli, mis. "Lobi Utama".
+  namaTitik   String   @map("nama_titik")
+  /// Kode yang dicetak ke barcode/QR dan ditempel di gedung.
+  kodeBarcode String   @unique @map("kode_barcode")
+  /// Koordinat titik validasi GPS.
+  lat         Decimal? @db.Decimal(10, 7)
+  long        Decimal? @db.Decimal(10, 7)
+  keterangan  String?
+  /// Soft delete.
+  aktif       Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  patroliLogs PatroliLog[]
+
+  @@map("Checkpoint")
+}
+
+model Absensi {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  waktuMasuk DateTime  @map("waktu_masuk")
+  waktuKeluar DateTime? @map("waktu_keluar")
+  /// Base64 / URL gambar selfie (Blok 4).
+  fotoMasuk  String?   @map("foto_masuk")
+  fotoKeluar String?   @map("foto_keluar")
+  latMasuk   Decimal?  @db.Decimal(10, 7) @map("lat_masuk")
+  longMasuk  Decimal?  @db.Decimal(10, 7) @map("long_masuk")
+  latKeluar  Decimal?  @db.Decimal(10, 7) @map("lat_keluar")
+  longKeluar Decimal?  @db.Decimal(10, 7) @map("long_keluar")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, waktuMasuk])
+  @@map("Absensi")
+}
+
+model PatroliLog {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  checkpointId String   @map("checkpoint_id")
+  waktu        DateTime @default(now())
+  foto         String?
+  lat          Decimal? @db.Decimal(10, 7)
+  long         Decimal? @db.Decimal(10, 7)
+  /// true bila GPS HP sesuai lokasi barcode checkpoint.
+  statusValid  Boolean  @default(true) @map("status_valid")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@index([checkpointId, waktu])
+  @@index([userId, waktu])
+  @@map("PatroliLog")
+}
+
+model AuditLog {
+  id       String   @id @default(cuid())
+  userId   String?  @map("user_id")
+  /// mis. "LOGIN", "CREATE_USER", "UPDATE_CHECKPOINT", "TOGGLE_USER".
+  aksi     String
+  tabel    String
+  dataLama Json?    @map("data_lama")
+  dataBaru Json?    @map("data_baru")
+  waktu    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tabel, waktu])
+  @@map("AuditLog")
+}
+
+/// Sesi login — token acak disimpan di cookie httpOnly.
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("Session")
+}
