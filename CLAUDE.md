@@ -24,10 +24,10 @@ Next.js (App Router), TypeScript, Tailwind CSS, Prisma, PostgreSQL (Neon, ap-sou
 Light glassmorphism, clean layout, responsif untuk mobile web.
 
 ## Progress
-- [ ] Blok 1: Setup project, PWA config, koneksi database (Prisma Schema)
-- [ ] Blok 2: Autentikasi & manajemen role
-- [ ] Blok 3: Master Data (Users & Checkpoints)
-- [ ] Blok 4: Fitur Absensi Kehadiran
-- [ ] Blok 5: Fitur Patroli (Barcode Scanner & GPS)
-- [ ] Blok 6: Dashboard & Laporan
+- [x] Blok 1: Setup project, PWA config, koneksi database (Prisma Schema)
+- [x] Blok 2: Autentikasi & manajemen role
+- [x] Blok 3: Master Data (Users & Checkpoints)
+- [x] Blok 4: Fitur Absensi Kehadiran
+- [x] Blok 5: Fitur Patroli (Barcode Scanner & GPS)
+- [x] Blok 6: Dashboard & Laporan
 - [ ] Blok 7: Deploy Vercel

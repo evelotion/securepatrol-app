@@ -20,6 +20,7 @@
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "dotenv": "^17.2.4",
+    "html5-qrcode": "^2.3.8",
     "next": "16.4.3",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
@@ -29,8 +30,8 @@
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
-    "@types/qrcode": "^1.5.5",
     "@types/pg": "^8.11.10",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

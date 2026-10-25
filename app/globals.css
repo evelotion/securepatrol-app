@@ -322,6 +322,16 @@ body {
   font-weight: 500;
 }
 
+.alert-warn {
+  border-radius: 0.85rem;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #92400e;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .alert-success {
   border-radius: 0.85rem;
   background: rgba(16, 185, 129, 0.14);

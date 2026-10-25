@@ -4,6 +4,8 @@ export type FormState =
       ok?: boolean;
       message?: string;
       errors?: Record<string, string>;
+      /** Peringatan non-fatal, mis. GPS di luar radius checkpoint. */
+      warning?: string;
     }
   | undefined;
 

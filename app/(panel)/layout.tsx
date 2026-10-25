@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 
 import { getCurrentUser } from "@/lib/auth";
-import { ROLE_LABEL } from "@/lib/roles";
+import { FIELD_ROLES, ROLE_LABEL } from "@/lib/roles";
 
 import { LogoutButton } from "./logout-button";
 
@@ -41,6 +41,7 @@ function NavSkeleton() {
 async function NavBar() {
   const user = await getCurrentUser();
   const isMaster = user.role === "SUPER_ADMIN";
+  const isField = FIELD_ROLES.includes(user.role);
 
   return (
     <>
@@ -53,6 +54,12 @@ async function NavBar() {
         </Link>
         <nav className="flex items-center gap-1">
           <NavLink href="/dashboard">Dashboard</NavLink>
+          {isField ? (
+            <>
+              <NavLink href="/absensi">Absensi</NavLink>
+              <NavLink href="/patroli">Patroli</NavLink>
+            </>
+          ) : null}
           {isMaster ? (
             <>
               <NavLink href="/master/users">Users</NavLink>
