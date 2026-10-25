@@ -4,6 +4,8 @@ import { useActionState, useState } from "react";
 
 import { checkIn, checkOut } from "@/app/actions/absensi";
 import { CameraCapture } from "@/components/camera-capture";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { FormState } from "@/lib/form";
 import { formatJam } from "@/lib/format";
 import type { AbsensiHariIni } from "@/lib/types";
@@ -99,7 +101,7 @@ function AbsenCard({
 
   if (disabled) {
     return (
-      <section className="glass rounded-2xl p-5 sm:p-6">
+      <Card className="p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-title">{label}</h2>
           <span className="badge badge-slate">Nonaktif</span>
@@ -127,12 +129,12 @@ function AbsenCard({
         ) : (
           <p className="mt-4 text-sm text-slate-500">{disabledReason}</p>
         )}
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="glass rounded-2xl p-5 sm:p-6">
+    <Card className="p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="section-title">{label}</h2>
         <span className="badge badge-amber">Menunggu</span>
@@ -182,9 +184,9 @@ function AbsenCard({
           value={gps.posisi ? String(gps.posisi.long) : ""}
         />
 
-        <button
+        <Button
           type="submit"
-          className="btn btn-primary w-full"
+          className="w-full"
           disabled={pending || foto === null}
         >
           {pending
@@ -192,9 +194,9 @@ function AbsenCard({
             : foto === null
               ? "Ambil selfie dulu"
               : label}
-        </button>
+        </Button>
       </form>
-    </section>
+    </Card>
   );
 }
 
@@ -207,7 +209,7 @@ function GpsPanel({
   koordinat: string | null;
 }) {
   return (
-    <div className="glass-inset rounded-2xl p-3">
+    <div className="glass-inset rounded-lg p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="field-label">Lokasi GPS</p>
@@ -222,14 +224,16 @@ function GpsPanel({
                 : "Kirim tanpa GPS bila izin ditolak (akan tercatat tanpa koordinat)."}
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost btn-sm shrink-0"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
           onClick={gps.refresh}
           disabled={gps.loading}
         >
           {gps.loading ? "…" : "Refresh"}
-        </button>
+        </Button>
       </div>
       {gps.error ? <p className="field-error mt-2">{gps.error}</p> : null}
     </div>

@@ -1,15 +1,81 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @theme inline {
+  /* Token shadcn/ui (Tailwind v4). */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+@layer base {
+  /* Default border tipis & ring tipis — mengganti border currentColor Tailwind v4. */
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
 :root {
+  /* ---- Token anti-slop: netral terang, aksen tunggal, garis tipis ---- */
   --background: #f4f5f7;
   --foreground: #16202f;
+  --card: rgba(255, 255, 255, 0.66);
+  --card-foreground: #16202f;
+  --popover: #ffffff;
+  --popover-foreground: #16202f;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #eceef2;
+  --secondary-foreground: #16202f;
+  --muted: #eceef2;
+  --muted-foreground: #5b6472;
+  --accent: #eceef2;
+  --accent-foreground: #16202f;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --input: rgba(15, 23, 42, 0.14);
+  --ring: rgba(79, 70, 229, 0.45);
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #16202f;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f6;
+  --sidebar-accent-foreground: #4338ca;
+  --sidebar-border: rgba(15, 23, 42, 0.08);
+  --sidebar-ring: rgba(79, 70, 229, 0.45);
+
   --glass: rgba(255, 255, 255, 0.66);
   --glass-strong: rgba(255, 255, 255, 0.92);
   --glass-border: rgba(15, 23, 42, 0.08);
@@ -97,9 +163,7 @@ body {
   text-transform: uppercase;
 }
 
-.input,
-.select,
-.textarea {
+.input {
   width: 100%;
   border-radius: var(--radius-ctl);
   border: 1px solid rgba(15, 23, 42, 0.12);
@@ -113,23 +177,22 @@ body {
     border-color 0.15s ease;
 }
 
-.input::placeholder,
-.textarea::placeholder {
+.input::placeholder {
   color: #94a3b8;
 }
 
-.input:focus,
-.select:focus,
-.textarea:focus {
+.input:focus {
   border-color: rgba(79, 70, 229, 0.5);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
   background: #ffffff;
 }
 
-.input[aria-invalid="true"],
-.select[aria-invalid="true"] {
+/* Invalid state berlaku untuk Input shadcn maupun .input legacy. */
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
   border-color: rgba(225, 29, 72, 0.6);
-  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.12);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
 }
 
 .field-error {
@@ -236,47 +299,6 @@ body {
   color: #4338ca;
 }
 
-/* ---------- Table ---------- */
-
-.table-wrap {
-  overflow-x: auto;
-  border-radius: var(--radius-card);
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  min-width: 46rem;
-}
-
-.table thead th {
-  text-align: left;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  padding: 0.7rem 0.9rem;
-  background: rgba(255, 255, 255, 0.55);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-}
-
-.table tbody td {
-  padding: 0.75rem 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
-  color: #1e293b;
-  vertical-align: middle;
-}
-
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.45);
-}
-
 /* ---------- Misc ---------- */
 
 .stat-value {
@@ -285,27 +307,6 @@ body {
   letter-spacing: -0.03em;
   color: #0f172a;
   font-variant-numeric: tabular-nums;
-}
-
-.skeleton {
-  border-radius: 1rem;
-  background: linear-gradient(
-    100deg,
-    rgba(255, 255, 255, 0.5) 20%,
-    rgba(255, 255, 255, 0.85) 40%,
-    rgba(255, 255, 255, 0.5) 60%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 140% 0;
-  }
-  100% {
-    background-position: -40% 0;
-  }
 }
 
 .alert-error {
@@ -372,3 +373,4 @@ body {
     display: none !important;
   }
 }
+

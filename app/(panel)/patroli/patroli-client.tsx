@@ -5,6 +5,9 @@ import { useActionState, useState } from "react";
 import { catatPatroli } from "@/app/actions/patroli";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { CameraCapture } from "@/components/camera-capture";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { FormState } from "@/lib/form";
 import { formatJam } from "@/lib/format";
 import type { CheckpointProgress, PatroliLogRow } from "@/lib/types";
@@ -48,7 +51,7 @@ export function PatroliClient({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {/* Kolom kiri: scanner + bukti */}
-      <section className="glass rounded-2xl p-5 sm:p-6">
+      <Card className="p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-title">Scan Titik</h2>
           <span className={`badge ${kode ? "badge-green" : "badge-slate"}`}>
@@ -81,8 +84,7 @@ export function PatroliClient({
             <label className="field-label" htmlFor="kode">
               Kode Barcode
             </label>
-            <input
-              className="input"
+            <Input
               id="kode"
               name="kode"
               type="text"
@@ -101,7 +103,7 @@ export function PatroliClient({
             hint="Ambil foto kondisi sekitar titik patroli."
           />
 
-          <div className="glass-inset rounded-2xl p-3">
+          <div className="glass-inset rounded-lg p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="field-label">Lokasi GPS</p>
@@ -116,14 +118,16 @@ export function PatroliClient({
                       : "Validasi jarak butuh GPS — tanpa lokasi kunjungan jadi TIDAK VALID."}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
-                className="btn btn-ghost btn-sm shrink-0"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
                 onClick={gps.refresh}
                 disabled={gps.loading}
               >
                 {gps.loading ? "…" : "Refresh"}
-              </button>
+              </Button>
             </div>
             {gps.error ? <p className="field-error mt-2">{gps.error}</p> : null}
           </div>
@@ -140,9 +144,9 @@ export function PatroliClient({
             value={gps.posisi ? String(gps.posisi.long) : ""}
           />
 
-          <button
+          <Button
             type="submit"
-            className="btn btn-primary w-full"
+            className="w-full"
             disabled={pending || kode === "" || foto === null}
           >
             {pending
@@ -152,13 +156,13 @@ export function PatroliClient({
                 : foto === null
                   ? "Ambil foto dulu"
                   : "Catat Kunjungan"}
-          </button>
+          </Button>
         </form>
-      </section>
+      </Card>
 
       {/* Kolom kanan: rute + log hari ini */}
       <div className="flex flex-col gap-4">
-        <section className="glass rounded-2xl p-5 sm:p-6">
+        <Card className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Rute Hari Ini</h2>
             <span className="badge badge-indigo">{checkpoints.length} titik</span>
@@ -173,7 +177,7 @@ export function PatroliClient({
               checkpoints.map((cp) => (
                 <li
                   key={cp.id}
-                  className="glass-inset flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
+                  className="glass-inset flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-800">
@@ -196,9 +200,9 @@ export function PatroliClient({
               ))
             )}
           </ul>
-        </section>
+        </Card>
 
-        <section className="glass rounded-2xl p-5 sm:p-6">
+        <Card className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Log Kunjungan</h2>
             <span className="badge badge-slate">{logs.length} hari ini</span>
@@ -213,7 +217,7 @@ export function PatroliClient({
               logs.map((log) => (
                 <li
                   key={log.id}
-                  className="glass-inset flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
+                  className="glass-inset flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-800">
@@ -234,7 +238,7 @@ export function PatroliClient({
               ))
             )}
           </ul>
-        </section>
+        </Card>
       </div>
     </div>
   );

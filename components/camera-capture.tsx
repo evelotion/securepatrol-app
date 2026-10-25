@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 /**
  * Capture foto dengan API native HTML5 (getUserMedia + canvas).
  *
@@ -142,14 +144,14 @@ export function CameraCapture({
             alt={`Pratinjau ${label}`}
             className="mx-auto max-h-72 w-auto rounded-2xl object-contain"
           />
-          <span className="badge badge-green absolute left-2 top-2 shadow">
+          <span className="badge badge-green absolute left-2 top-2">
             {label} tersimpan
           </span>
         </div>
         <div className="flex gap-2">
-          <button type="button" className="btn btn-ghost btn-sm" onClick={retake}>
+          <Button variant="outline" size="sm" onClick={retake}>
             Foto Ulang
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -168,26 +170,28 @@ export function CameraCapture({
               facing === "user" ? "-scale-x-100" : ""
             }`}
           />
-          <span className="badge badge-amber absolute left-2 top-2 shadow">
+          <span className="badge badge-amber absolute left-2 top-2">
             {label} · kamera aktif
           </span>
         </div>
-        {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
+        {hint ? (
+          <p className="text-xs text-muted-foreground">{hint}</p>
+        ) : null}
         {error ? <p className="field-error">{error}</p> : null}
         <div className="flex gap-2">
-          <button type="button" className="btn btn-primary btn-sm" onClick={capture}>
+          <Button size="sm" onClick={capture}>
             Ambil {label}
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               stopStream();
               setError(null);
             }}
           >
             Batal
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -197,19 +201,18 @@ export function CameraCapture({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-white/90 bg-white/40 px-3 py-3">
         <div>
-          <p className="text-sm font-semibold text-slate-700">{label}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">
             {hint ?? "Ambil foto sebagai bukti kehadiran."}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
+        <Button
+          size="sm"
           onClick={() => void start()}
           disabled={busy}
         >
           {busy ? "Membuka…" : "Buka Kamera"}
-        </button>
+        </Button>
       </div>
       {error ? <p className="field-error">{error}</p> : null}
     </div>

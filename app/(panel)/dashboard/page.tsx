@@ -1,5 +1,24 @@
 import { Suspense } from "react";
 
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 import { getDashboardHariIni } from "@/lib/data";
 import { formatJam } from "@/lib/format";
 
@@ -15,14 +34,17 @@ export default function DashboardPage() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-5">
-      <div className="skeleton h-24 w-full rounded-2xl" />
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-7 w-64" />
+        <Skeleton className="h-4 w-72" />
+      </div>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="skeleton h-28 rounded-2xl" />
+          <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
       </div>
-      <div className="skeleton h-64 w-full rounded-2xl" />
+      <Skeleton className="h-64 rounded-xl" />
     </div>
   );
 }
@@ -56,63 +78,61 @@ async function Dashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      <section className="glass rounded-2xl p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="page-title">Selamat datang, {actor.nama}</h1>
-            <p className="page-sub mt-1">
-              {isTim
-                ? "Ringkasan kehadiran & patroli tim hari ini."
-                : "Ringkasan kehadiran & patroli Anda hari ini."}
-            </p>
-          </div>
-          <span className="badge badge-slate">
-            {summary.logHariIni} kunjungan · {summary.logValid} valid
-            {summary.logInvalid > 0 ? ` · ${summary.logInvalid} invalid` : ""}
-          </span>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="page-title">Selamat datang, {actor.nama}</h1>
+          <p className="page-sub mt-1">
+            {isTim
+              ? "Ringkasan kehadiran & patroli tim hari ini."
+              : "Ringkasan kehadiran & patroli Anda hari ini."}
+          </p>
         </div>
-      </section>
+        <span className="badge badge-slate">
+          {summary.logHariIni} kunjungan · {summary.logValid} valid
+          {summary.logInvalid > 0 ? ` · ${summary.logInvalid} invalid` : ""}
+        </span>
+      </header>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((card) => (
-          <article key={card.label} className="glass rounded-2xl p-4 sm:p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <Card key={card.label} className="p-4 sm:p-5">
+            <p className="text-xs font-medium text-muted-foreground">
               {card.label}
             </p>
             <p className="stat-value mt-2">{card.value}</p>
-            <p className="mt-1 text-xs text-slate-500">{card.hint}</p>
-          </article>
+            <p className="mt-1 text-xs text-muted-foreground">{card.hint}</p>
+          </Card>
         ))}
       </section>
 
       {isTim && absensi.length > 0 ? (
-        <section className="glass rounded-2xl p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="section-title">Status absensi tim</h2>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="text-base">Status absensi tim</CardTitle>
             <span className="badge badge-indigo">{absensi.length} orang</span>
-          </div>
-          <div className="table-wrap mt-4">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Regu</th>
-                  <th>Masuk</th>
-                  <th>Keluar</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
+          </CardHeader>
+          <CardContent>
+            <Table className="min-w-[36rem]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Regu</TableHead>
+                  <TableHead>Masuk</TableHead>
+                  <TableHead>Keluar</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {absensi.map((row) => (
-                  <tr key={row.userId}>
-                    <td className="font-semibold text-slate-800">{row.nama}</td>
-                    <td>{row.regu ?? "-"}</td>
-                    <td>{formatJam(row.waktuMasuk)}</td>
-                    <td>
+                  <TableRow key={row.userId}>
+                    <TableCell className="font-medium">{row.nama}</TableCell>
+                    <TableCell>{row.regu ?? "-"}</TableCell>
+                    <TableCell>{formatJam(row.waktuMasuk)}</TableCell>
+                    <TableCell>
                       {row.waktuKeluar ? formatJam(row.waktuKeluar) : "-"}
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span
                         className={`badge ${
                           row.waktuKeluar ? "badge-slate" : "badge-green"
@@ -120,119 +140,127 @@ async function Dashboard() {
                       >
                         {row.waktuKeluar ? "Pulang" : "Bertugas"}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <article className="glass rounded-2xl p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="section-title">Progres patroli</h2>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="text-base">Progres patroli</CardTitle>
             <span className="badge badge-amber">
               {summary.checkpointTerpatroli}/{summary.totalCheckpointAktif}
             </span>
-          </div>
-          <ul className="mt-4 flex flex-col gap-2">
-            {checkpoints.length === 0 ? (
-              <li className="text-sm text-slate-500">
-                Belum ada titik patroli aktif.
-              </li>
-            ) : (
-              checkpoints.map((cp) => (
-                <li
-                  key={cp.id}
-                  className="glass-inset flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800">
-                      {cp.namaTitik}
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      {cp.dikunjungi
-                        ? `${cp.pengunjung ?? "-"}${
-                            cp.kunjunganTerakhir
-                              ? ` · ${formatJam(cp.kunjunganTerakhir)}`
-                              : ""
-                          }${cp.jumlahInvalid > 0 ? ` · ${cp.jumlahInvalid} invalid` : ""}`
-                        : "Belum dikunjungi"}
-                    </p>
-                  </div>
-                  <span
-                    className={`badge shrink-0 ${
-                      cp.dikunjungi ? "badge-green" : "badge-amber"
-                    }`}
-                  >
-                    {cp.dikunjungi ? "Sudah" : "Belum"}
-                  </span>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col gap-2">
+              {checkpoints.length === 0 ? (
+                <li className="text-sm text-muted-foreground">
+                  Belum ada titik patroli aktif.
                 </li>
-              ))
-            )}
-          </ul>
-        </article>
+              ) : (
+                checkpoints.map((cp) => (
+                  <li
+                    key={cp.id}
+                    className="glass-inset flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {cp.namaTitik}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {cp.dikunjungi
+                          ? `${cp.pengunjung ?? "-"}${
+                              cp.kunjunganTerakhir
+                                ? ` · ${formatJam(cp.kunjunganTerakhir)}`
+                                : ""
+                            }${
+                              cp.jumlahInvalid > 0
+                                ? ` · ${cp.jumlahInvalid} invalid`
+                                : ""
+                            }`
+                          : "Belum dikunjungi"}
+                      </p>
+                    </div>
+                    <span
+                      className={`badge shrink-0 ${
+                        cp.dikunjungi ? "badge-green" : "badge-amber"
+                      }`}
+                    >
+                      {cp.dikunjungi ? "Sudah" : "Belum"}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </CardContent>
+        </Card>
 
-        <article className="glass rounded-2xl p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="section-title">Kunjungan terbaru</h2>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="text-base">Kunjungan terbaru</CardTitle>
             <span className="badge badge-slate">{logs.length} log</span>
-          </div>
-          <ul className="mt-4 flex flex-col gap-2">
-            {logs.length === 0 ? (
-              <li className="text-sm text-slate-500">
-                Belum ada kunjungan patroli hari ini.
-              </li>
-            ) : (
-              logs.map((log) => (
-                <li
-                  key={log.id}
-                  className="glass-inset flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800">
-                      {log.namaCheckpoint}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {formatJam(log.waktu)} · {log.namaUser}
-                    </p>
-                  </div>
-                  <span
-                    className={`badge shrink-0 ${
-                      log.statusValid ? "badge-green" : "badge-amber"
-                    }`}
-                  >
-                    {log.statusValid ? "Valid" : "Invalid"}
-                  </span>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col gap-2">
+              {logs.length === 0 ? (
+                <li className="text-sm text-muted-foreground">
+                  Belum ada kunjungan patroli hari ini.
                 </li>
-              ))
-            )}
-          </ul>
-        </article>
+              ) : (
+                logs.map((log) => (
+                  <li
+                    key={log.id}
+                    className="glass-inset flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {log.namaCheckpoint}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatJam(log.waktu)} · {log.namaUser}
+                      </p>
+                    </div>
+                    <span
+                      className={`badge shrink-0 ${
+                        log.statusValid ? "badge-green" : "badge-amber"
+                      }`}
+                    >
+                      {log.statusValid ? "Valid" : "Invalid"}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </CardContent>
+        </Card>
       </section>
 
       {actor.role === "SUPER_ADMIN" ? (
-        <section className="glass rounded-2xl p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="section-title">Kelola data master</h2>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base">Kelola data master</CardTitle>
             {stats ? (
               <span className="badge badge-indigo">
                 {stats.userAktif}/{stats.totalUser} user ·{" "}
                 {stats.checkpointAktif}/{stats.totalCheckpoint} checkpoint
               </span>
             ) : null}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <a href="/master/users" className="btn btn-primary btn-sm">
-              Kelola User
-            </a>
-            <a href="/master/checkpoints" className="btn btn-ghost btn-sm">
-              Kelola Checkpoint
-            </a>
-          </div>
-        </section>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Button asChild size="sm">
+              <Link href="/master/users">Kelola User</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/master/checkpoints">Kelola Checkpoint</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : null}
     </div>
   );

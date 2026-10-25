@@ -3,6 +3,18 @@
 import { useCallback, useEffect, useState, useActionState } from "react";
 
 import { createUser, toggleUserAktif, updateUser } from "@/app/actions/users";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { FormState } from "@/lib/form";
 import { ROLE_BADGE, ROLE_LABEL, ROLES } from "@/lib/roles";
 import type { UserRow } from "@/lib/types";
@@ -30,92 +42,92 @@ export function UsersClient({
         </p>
       ) : null}
 
-      <section className="glass rounded-2xl p-4 sm:p-5">
+      <Card className="p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">Daftar Akun</h2>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
+          <Button
+            size="sm"
             onClick={() => {
               setFlash(null);
               setCreating(true);
             }}
           >
-            + Tambah User
-          </button>
+            Tambah User
+          </Button>
         </div>
 
-        <div className="table-wrap glass-inset">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th>Email / Username</th>
-                <th>Role</th>
-                <th>Regu</th>
-                <th>Status</th>
-                <th className="text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="glass-inset overflow-hidden rounded-lg">
+          <Table className="min-w-[52rem]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nama</TableHead>
+                <TableHead>Email / Username</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Regu</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                     Belum ada user. Klik “Tambah User” untuk memulai.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <p className="font-semibold text-slate-800">
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <p className="font-medium">
                         {user.nama}
                       </p>
                       {user.id === actorId ? (
-                        <span className="text-xs text-slate-400">Anda</span>
+                        <span className="text-xs text-muted-foreground">Anda</span>
                       ) : null}
-                    </td>
-                    <td>
-                      <p className="text-slate-700">{user.email}</p>
+                    </TableCell>
+                    <TableCell>
+                      <p>{user.email}</p>
                       {user.username ? (
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-muted-foreground">
                           @{user.username}
                         </p>
                       ) : null}
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span className={`badge ${ROLE_BADGE[user.role]}`}>
                         {ROLE_LABEL[user.role]}
                       </span>
-                    </td>
-                    <td>{user.regu ?? "—"}</td>
-                    <td>
+                    </TableCell>
+                    <TableCell>{user.regu ?? "—"}</TableCell>
+                    <TableCell>
                       <span
                         className={`badge ${user.aktif ? "badge-green" : "badge-slate"}`}
                       >
                         {user.aktif ? "Aktif" : "Nonaktif"}
                       </span>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             setFlash(null);
                             setEditing(user);
                           }}
                         >
                           Edit
-                        </button>
+                        </Button>
                         <form
                           action={toggleUserAktif}
                           className="inline"
                         >
                           <input type="hidden" name="id" value={user.id} />
-                          <button
+                          <Button
                             type="submit"
-                            className={`btn btn-sm ${user.aktif ? "btn-danger" : "btn-ghost"}`}
+                            variant={user.aktif ? "destructive" : "outline"}
+                            size="sm"
                             disabled={user.id === actorId && user.aktif}
                             title={
                               user.id === actorId && user.aktif
@@ -124,17 +136,17 @@ export function UsersClient({
                             }
                           >
                             {user.aktif ? "Nonaktifkan" : "Aktifkan"}
-                          </button>
+                          </Button>
                         </form>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
-      </section>
+      </Card>
 
       {creating ? (
         <UserFormModal
@@ -191,14 +203,14 @@ function UserFormModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="glass-strong max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl p-5 sm:p-6">
+      <div className="glass-strong max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-xl p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="section-title">
             {user ? "Edit User" : "Tambah User"}
           </h2>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={onClose}>
             Tutup
-          </button>
+          </Button>
         </div>
 
         <form action={formAction} className="flex flex-col gap-4">
@@ -208,8 +220,7 @@ function UserFormModal({
             <label className="field-label" htmlFor="nama">
               Nama Lengkap
             </label>
-            <input
-              className="input"
+            <Input
               id="nama"
               name="nama"
               defaultValue={user?.nama ?? ""}
@@ -224,8 +235,7 @@ function UserFormModal({
             <label className="field-label" htmlFor="email">
               Email
             </label>
-            <input
-              className="input"
+            <Input
               id="email"
               name="email"
               type="email"
@@ -241,8 +251,7 @@ function UserFormModal({
             <label className="field-label" htmlFor="username">
               Username <span className="normal-case">(opsional)</span>
             </label>
-            <input
-              className="input"
+            <Input
               id="username"
               name="username"
               defaultValue={user?.username ?? ""}
@@ -257,8 +266,7 @@ function UserFormModal({
               <label className="field-label" htmlFor="role">
                 Role
               </label>
-              <select
-                className="select"
+              <Select
                 id="role"
                 name="role"
                 defaultValue={user?.role ?? "SECURITY"}
@@ -269,7 +277,7 @@ function UserFormModal({
                     {ROLE_LABEL[role]}
                   </option>
                 ))}
-              </select>
+              </Select>
               {error("role")}
             </div>
 
@@ -277,8 +285,7 @@ function UserFormModal({
               <label className="field-label" htmlFor="regu">
                 Regu <span className="normal-case">(opsional)</span>
               </label>
-              <input
-                className="input"
+              <Input
                 id="regu"
                 name="regu"
                 defaultValue={user?.regu ?? ""}
@@ -291,8 +298,7 @@ function UserFormModal({
             <label className="field-label" htmlFor="password">
               Password {user ? <span className="normal-case">(kosongkan bila tetap)</span> : null}
             </label>
-            <input
-              className="input"
+            <Input
               id="password"
               name="password"
               type="password"
@@ -305,16 +311,12 @@ function UserFormModal({
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              className="btn btn-primary flex-1"
-              disabled={pending}
-            >
+            <Button type="submit" className="flex-1" disabled={pending}>
               {pending ? "Menyimpan…" : "Simpan"}
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
               Batal
-            </button>
+            </Button>
           </div>
         </form>
       </div>

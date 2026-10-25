@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 /**
  * Scanner barcode/QR untuk titik patroli (Blok 5).
  *
@@ -118,7 +120,7 @@ export function BarcodeScanner({
             </p>
           </div>
         ) : (
-          <span className="badge badge-amber absolute left-2 top-2 shadow">
+          <span className="badge badge-amber absolute left-2 top-2">
             Memindai…
           </span>
         )}
@@ -128,23 +130,22 @@ export function BarcodeScanner({
 
       <div className="flex gap-2">
         {live ? (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void stop()}
             disabled={busy}
           >
             Berhenti
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
+          <Button
+            size="sm"
             onClick={() => void start()}
             disabled={busy || disabled}
           >
             {busy ? "Membuka…" : "Mulai Scan"}
-          </button>
+          </Button>
         )}
       </div>
     </div>

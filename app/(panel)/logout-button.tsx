@@ -2,6 +2,8 @@
 
 import { useFormStatus } from "react-dom";
 
+import { Button } from "@/components/ui/button";
+
 import { logout } from "@/app/actions/auth";
 
 export function LogoutButton() {
@@ -16,13 +18,15 @@ function LogoutSubmit() {
   const { pending } = useFormStatus();
 
   return (
-    <button
+    <Button
       type="submit"
-      className="btn btn-ghost btn-sm w-full"
+      variant="outline"
+      size="sm"
+      className="w-full justify-start"
       disabled={pending}
       title="Keluar dari sesi"
     >
       {pending ? "…" : "Keluar"}
-    </button>
+    </Button>
   );
 }

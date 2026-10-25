@@ -7,6 +7,18 @@ import {
   toggleCheckpointAktif,
   updateCheckpoint,
 } from "@/app/actions/checkpoints";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { FormState } from "@/lib/form";
 import type { CheckpointRow } from "@/lib/types";
 
@@ -33,112 +45,112 @@ export function CheckpointsClient({
         </p>
       ) : null}
 
-      <section className="glass rounded-2xl p-4 sm:p-5">
+      <Card className="p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">Daftar Titik Patroli</h2>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
+          <Button
+            size="sm"
             onClick={() => {
               setFlash(null);
               setCreating(true);
             }}
           >
-            + Tambah Checkpoint
-          </button>
+            Tambah Checkpoint
+          </Button>
         </div>
 
-        <div className="table-wrap glass-inset">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>QR</th>
-                <th>Nama Titik</th>
-                <th>Kode Barcode</th>
-                <th>Koordinat</th>
-                <th>Status</th>
-                <th className="text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="glass-inset overflow-hidden rounded-lg">
+          <Table className="min-w-[54rem]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>QR</TableHead>
+                <TableHead>Nama Titik</TableHead>
+                <TableHead>Kode Barcode</TableHead>
+                <TableHead>Koordinat</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {checkpoints.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                     Belum ada titik patroli. Klik “Tambah Checkpoint”.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 checkpoints.map((cp) => (
-                  <tr key={cp.id}>
-                    <td>
+                  <TableRow key={cp.id}>
+                    <TableCell>
                       <div
                         className="qr-box h-12 w-12 rounded-lg bg-white p-1"
                         aria-hidden="true"
                         dangerouslySetInnerHTML={{ __html: cp.qrSvg }}
                       />
-                    </td>
-                    <td>
-                      <p className="font-semibold text-slate-800">
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium">
                         {cp.namaTitik}
                       </p>
                       {cp.keterangan ? (
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-muted-foreground">
                           {cp.keterangan}
                         </p>
                       ) : null}
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <code className="rounded-md bg-white/70 px-2 py-1 text-xs font-semibold text-indigo-700">
                         {cp.kodeBarcode}
                       </code>
-                    </td>
-                    <td className="text-xs text-slate-500">
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
                       {cp.lat && cp.long ? `${cp.lat}, ${cp.long}` : "—"}
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span
                         className={`badge ${cp.aktif ? "badge-green" : "badge-slate"}`}
                       >
                         {cp.aktif ? "Aktif" : "Nonaktif"}
                       </span>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setPrinting(cp)}
                         >
                           Cetak
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             setFlash(null);
                             setEditing(cp);
                           }}
                         >
                           Edit
-                        </button>
+                        </Button>
                         <form action={toggleCheckpointAktif} className="inline">
                           <input type="hidden" name="id" value={cp.id} />
-                          <button
+                          <Button
                             type="submit"
-                            className={`btn btn-sm ${cp.aktif ? "btn-danger" : "btn-ghost"}`}
+                            variant={cp.aktif ? "destructive" : "outline"}
+                            size="sm"
                           >
                             {cp.aktif ? "Nonaktifkan" : "Aktifkan"}
-                          </button>
+                          </Button>
                         </form>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
-      </section>
+      </Card>
 
       {creating ? (
         <CheckpointFormModal
@@ -197,14 +209,14 @@ function CheckpointFormModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="glass-strong max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl p-5 sm:p-6">
+      <div className="glass-strong max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-xl p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="section-title">
             {checkpoint ? "Edit Checkpoint" : "Tambah Checkpoint"}
           </h2>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={onClose}>
             Tutup
-          </button>
+          </Button>
         </div>
 
         <form action={formAction} className="flex flex-col gap-4">
@@ -216,8 +228,7 @@ function CheckpointFormModal({
             <label className="field-label" htmlFor="namaTitik">
               Nama Titik
             </label>
-            <input
-              className="input"
+            <Input
               id="namaTitik"
               name="namaTitik"
               defaultValue={checkpoint?.namaTitik ?? ""}
@@ -232,8 +243,7 @@ function CheckpointFormModal({
             <label className="field-label" htmlFor="kodeBarcode">
               Kode Barcode <span className="normal-case">(opsional, otomatis bila kosong)</span>
             </label>
-            <input
-              className="input"
+            <Input
               id="kodeBarcode"
               name="kodeBarcode"
               defaultValue={checkpoint?.kodeBarcode ?? ""}
@@ -248,8 +258,7 @@ function CheckpointFormModal({
               <label className="field-label" htmlFor="lat">
                 Latitude
               </label>
-              <input
-                className="input"
+              <Input
                 id="lat"
                 name="lat"
                 inputMode="decimal"
@@ -264,8 +273,7 @@ function CheckpointFormModal({
               <label className="field-label" htmlFor="long">
                 Longitude
               </label>
-              <input
-                className="input"
+              <Input
                 id="long"
                 name="long"
                 inputMode="decimal"
@@ -281,8 +289,7 @@ function CheckpointFormModal({
             <label className="field-label" htmlFor="keterangan">
               Keterangan <span className="normal-case">(opsional)</span>
             </label>
-            <textarea
-              className="textarea"
+            <Textarea
               id="keterangan"
               name="keterangan"
               rows={2}
@@ -292,16 +299,12 @@ function CheckpointFormModal({
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              className="btn btn-primary flex-1"
-              disabled={pending}
-            >
+            <Button type="submit" className="flex-1" disabled={pending}>
               {pending ? "Menyimpan…" : "Simpan"}
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
               Batal
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -325,15 +328,15 @@ function PrintLabel({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="glass-strong w-full max-w-xs rounded-2xl p-5">
+      <div className="glass-strong w-full max-w-xs rounded-xl p-5">
         <div className="no-print mb-4 flex items-center justify-between">
           <h2 className="section-title">Label Checkpoint</h2>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={onClose}>
             Tutup
-          </button>
+          </Button>
         </div>
 
-        <div className="print-area rounded-2xl bg-white p-5 text-center">
+        <div className="print-area rounded-lg bg-white p-5 text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
             SecurePatrol
           </p>
@@ -354,13 +357,9 @@ function PrintLabel({
           ) : null}
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary mt-4 w-full"
-          onClick={() => window.print()}
-        >
+        <Button className="mt-4 w-full" onClick={() => window.print()}>
           Cetak Label
-        </button>
+        </Button>
       </div>
     </div>
   );
