@@ -19,13 +19,21 @@ type CheckpointInput = {
   keterangan: string;
 };
 
-function validate(input: CheckpointInput): Record<string, string> {
+function validate(
+  input: CheckpointInput,
+  wajibKodeBarcode = false,
+): Record<string, string> {
   const errors: Record<string, string> = {};
 
   if (input.namaTitik.length < 2) {
     errors.namaTitik = "Nama titik minimal 2 karakter.";
   }
-  if (input.kodeBarcode && !/^[A-Za-z0-9._-]{3,64}$/.test(input.kodeBarcode)) {
+  if (!input.kodeBarcode) {
+    // F1-5 — saat update, kode barcode tidak boleh dikosongkan.
+    if (wajibKodeBarcode) {
+      errors.kodeBarcode = "Kode barcode wajib diisi.";
+    }
+  } else if (!/^[A-Za-z0-9._-]{3,64}$/.test(input.kodeBarcode)) {
     errors.kodeBarcode =
       "Kode hanya boleh huruf/angka/strip/underscore (3-64 karakter).";
   }
@@ -120,7 +128,8 @@ export async function updateCheckpoint(
     keterangan: str(formData.get("keterangan")),
   };
 
-  const errors = validate(input);
+  // F1-5 — update wajib menerima kode barcode terisi & lolos regex.
+  const errors = validate(input, true);
   if (Object.keys(errors).length > 0) return { errors };
 
   const target = await prisma.checkpoint.findUnique({ where: { id } });

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Tentang Project
-Aplikasi web SecurePatrol untuk absensi dan patroli sekuriti. Detail lengkap di docs/PRD.md — baca dulu sebelum mengerjakan apa pun.
+Aplikasi web SecurePatrol untuk absensi dan patroli sekuriti. Detail lengkap di docs/PRD-SecurePatrol.md — baca dulu sebelum mengerjakan apa pun.
 
 ## Tech Stack
 Next.js (App Router), TypeScript, Tailwind CSS, Prisma, PostgreSQL (Neon, ap-southeast-1). Deploy ke Vercel.

@@ -116,6 +116,20 @@ model AuditLog {
   @@map("AuditLog")
 }
 
+/// Percobaan login untuk rate limit (F1-3).
+/// `identifier` disimpan dalam huruf kecil (email/username yang ditekan).
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  identifier String
+  ip         String
+  sukses     Boolean  @default(false)
+  waktu      DateTime @default(now())
+
+  @@index([identifier, sukses, waktu])
+  @@index([ip, sukses, waktu])
+  @@map("LoginAttempt")
+}
+
 /// Sesi login — token acak disimpan di cookie httpOnly.
 model Session {
   id        String   @id @default(cuid())

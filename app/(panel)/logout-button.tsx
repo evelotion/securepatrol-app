@@ -7,8 +7,18 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/app/actions/auth";
 
 export function LogoutButton() {
+  // F1-2: minta service worker menghapus semua cache saat logout,
+  // supaya data user (dashboard, selfie base64) tidak tersisa di perangkat.
+  const bersihkanCache = () => {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => reg?.active?.postMessage({ type: "CLEAR" }))
+      .catch(() => undefined);
+  };
+
   return (
-    <form action={logout}>
+    <form action={logout} onSubmit={bersihkanCache}>
       <LogoutSubmit />
     </form>
   );

@@ -1,17 +1,23 @@
 /** Format waktu/tanggal lokal (WIB) — aman dipakai client & server. */
 
+import { ZONA_WIB } from "@/lib/waktu";
+
+// Zona eksplisit: jam server (UTC) tidak boleh ikut menentukan tampilan.
 const JAM = new Intl.DateTimeFormat("id-ID", {
+  timeZone: ZONA_WIB,
   hour: "2-digit",
   minute: "2-digit",
 });
 
 const TANGGAL = new Intl.DateTimeFormat("id-ID", {
+  timeZone: ZONA_WIB,
   day: "numeric",
   month: "short",
   year: "numeric",
 });
 
 const LENGKAP = new Intl.DateTimeFormat("id-ID", {
+  timeZone: ZONA_WIB,
   day: "numeric",
   month: "short",
   hour: "2-digit",

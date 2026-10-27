@@ -70,9 +70,7 @@ export function parseKoordinat(
 /** "14:03" — jam lokal WIB untuk pesan & tampilan. */
 export { formatJam } from "@/lib/format";
 
-/** Awal hari (00:00 waktu server) untuk query "hari ini". */
-export function startOfHari(now: Date = new Date()): Date {
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+/**
+ * Batas hari & jendela waktu pindah ke `lib/waktu.ts` (F1-1):
+ * `startOfHariWIB()` / `batasAbsensiTerbuka()` berbasis Asia/Jakarta.
+ */

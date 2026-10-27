@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 
+import { Prisma } from "@/generated/prisma/client";
 import { requireRole } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
-import { formatJam, parseFoto, parseKoordinat, startOfHari } from "@/lib/bukti";
+import { formatJam, parseFoto, parseKoordinat } from "@/lib/bukti";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
 import { prisma } from "@/lib/prisma";
 import { FIELD_ROLES } from "@/lib/roles";
+import { batasAbsensiTerbuka, startOfHariWIB } from "@/lib/waktu";
 
 /**
  * Blok 4 — Absensi Kehadiran.
@@ -18,10 +20,41 @@ import { FIELD_ROLES } from "@/lib/roles";
  * tersimpan (tanpa isi base64 agar tabel audit tidak membengkak).
  */
 
-async function absensiHariIni(userId: string) {
+/** Baris absensi ringkas — kolom foto sengaja tidak diambil (F1-9). */
+type AbsensiRingkas = {
+  id: string;
+  waktuMasuk: Date;
+  waktuKeluar: Date | null;
+};
+
+const SELECT_RINGKAS = {
+  id: true,
+  waktuMasuk: true,
+  waktuKeluar: true,
+} as const;
+
+/**
+ * Absensi terbuka (`waktuKeluar: null`) milik user dalam 16 jam terakhir.
+ * Dipakai check-in & check-out supaya shift malam 22:00 → 06:00 tetap satu baris (F1-1).
+ */
+async function absensiTerbuka(userId: string): Promise<AbsensiRingkas | null> {
   return prisma.absensi.findFirst({
-    where: { userId, waktuMasuk: { gte: startOfHari() } },
+    where: {
+      userId,
+      waktuKeluar: null,
+      waktuMasuk: { gte: batasAbsensiTerbuka() },
+    },
     orderBy: { waktuMasuk: "desc" },
+    select: SELECT_RINGKAS,
+  });
+}
+
+/** Absensi milik user yang dimulai hari ini (00:00 WIB, bukan hari server). */
+async function absensiHariIni(userId: string): Promise<AbsensiRingkas | null> {
+  return prisma.absensi.findFirst({
+    where: { userId, waktuMasuk: { gte: startOfHariWIB() } },
+    orderBy: { waktuMasuk: "desc" },
+    select: SELECT_RINGKAS,
   });
 }
 
@@ -42,28 +75,49 @@ export async function checkIn(
   if (!koordinat.ok) return { errors: { gps: koordinat.error } };
   const { lat, long } = koordinat.value;
 
-  const existing = await absensiHariIni(actor.id);
-  if (existing && existing.waktuKeluar === null) {
+  const terbuka = await absensiTerbuka(actor.id);
+  if (terbuka) {
     return {
       errors: {
-        foto: `Anda sudah absen masuk pukul ${formatJam(existing.waktuMasuk)}.`,
+        foto: `Anda sudah absen masuk pukul ${formatJam(terbuka.waktuMasuk)}.`,
       },
     };
   }
-  if (existing) {
+  const hariIni = await absensiHariIni(actor.id);
+  if (hariIni?.waktuKeluar === null) {
+    return {
+      errors: {
+        foto: `Anda sudah absen masuk pukul ${formatJam(hariIni.waktuMasuk)}.`,
+      },
+    };
+  }
+  if (hariIni) {
     return { errors: { foto: "Absensi hari ini sudah ditutup (masuk & keluar)." } };
   }
 
   const now = new Date();
-  const created = await prisma.absensi.create({
-    data: {
-      userId: actor.id,
-      waktuMasuk: now,
-      fotoMasuk: foto.value,
-      latMasuk: lat,
-      longMasuk: long,
-    },
-  });
+  let created: { id: string };
+  try {
+    created = await prisma.absensi.create({
+      data: {
+        userId: actor.id,
+        waktuMasuk: now,
+        fotoMasuk: foto.value,
+        latMasuk: lat,
+        longMasuk: long,
+      },
+      select: { id: true },
+    });
+  } catch (err) {
+    // Indeks unik parsial `absensi_satu_terbuka` — dua request paralel (F1-4).
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return { errors: { foto: "Sudah absen masuk." } };
+    }
+    throw err;
+  }
 
   await writeAudit({
     userId: actor.id,
@@ -107,16 +161,19 @@ export async function checkOut(
   if (!koordinat.ok) return { errors: { gps: koordinat.error } };
   const { lat, long } = koordinat.value;
 
-  const existing = await absensiHariIni(actor.id);
+  // Cari absensi terbuka dalam 16 jam terakhir — bukan "hari ini" (F1-1),
+  // supaya check-out pukul 06:00 WIB untuk shift 22:00 tetap berhasil.
+  const existing = await absensiTerbuka(actor.id);
   if (!existing) {
+    const hariIni = await absensiHariIni(actor.id);
+    if (hariIni?.waktuKeluar) {
+      return {
+        errors: {
+          foto: `Anda sudah absen keluar pukul ${formatJam(hariIni.waktuKeluar)}.`,
+        },
+      };
+    }
     return { errors: { foto: "Belum ada absen masuk hari ini." } };
-  }
-  if (existing.waktuKeluar) {
-    return {
-      errors: {
-        foto: `Anda sudah absen keluar pukul ${formatJam(existing.waktuKeluar)}.`,
-      },
-    };
   }
 
   const now = new Date();

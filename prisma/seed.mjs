@@ -10,7 +10,24 @@ import { Client } from "pg";
 
 const EMAIL = process.env.SEED_ADMIN_EMAIL ?? "admin@securepatrol.id";
 const NAMA = process.env.SEED_ADMIN_NAMA ?? "Administrator";
-const PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Admin123!";
+const PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+
+// F1-8 — password default "Admin123!" tidak boleh dipakai lagi.
+// Seed gagal cepat (sebelum koneksi DB) bila env tidak di-set atau lemah.
+if (!PASSWORD) {
+  console.error(
+    "SEED_ADMIN_PASSWORD belum di-set. Isi di .env (minimal 12 karakter), " +
+      "lalu jalankan ulang: npx prisma db seed",
+  );
+  process.exit(1);
+}
+if (PASSWORD.length < 12) {
+  console.error(
+    `SEED_ADMIN_PASSWORD terlalu pendek (${PASSWORD.length} karakter). ` +
+      "Gunakan minimal 12 karakter.",
+  );
+  process.exit(1);
+}
 
 function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Skrip lokal sementara (screenshot/debug) — bukan sumber aplikasi.
+    ".tmp-ui/**",
   ]),
 ]);
 

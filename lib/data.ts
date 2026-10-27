@@ -3,9 +3,9 @@ import "server-only";
 import QRCode from "qrcode";
 
 import { getCurrentUser, requireRole, type SessionUser } from "@/lib/auth";
-import { startOfHari } from "@/lib/bukti";
 import { prisma } from "@/lib/prisma";
 import { DASHBOARD_ROLES, FIELD_ROLES, MASTER_ROLES } from "@/lib/roles";
+import { batasAbsensiTerbuka, startOfHariWIB } from "@/lib/waktu";
 import type {
   AbsensiHariIni,
   AbsensiRow,
@@ -34,7 +34,15 @@ export async function getAbsensiSaya(): Promise<{
   const actor = await requireRole(FIELD_ROLES);
 
   const row = await prisma.absensi.findFirst({
-    where: { userId: actor.id, waktuMasuk: { gte: startOfHari() } },
+    where: {
+      userId: actor.id,
+      // Absensi terbuka dalam 16 jam terakhir tetap tampil setelah tengah malam,
+      // supaya tombol Absen Keluar tetap aktif untuk shift malam (F1-1).
+      OR: [
+        { waktuKeluar: null, waktuMasuk: { gte: batasAbsensiTerbuka() } },
+        { waktuMasuk: { gte: startOfHariWIB() } },
+      ],
+    },
     orderBy: { waktuMasuk: "desc" },
   });
 
@@ -121,7 +129,7 @@ export async function getPatroliSaya(): Promise<{
   };
 }> {
   const actor = await requireRole(FIELD_ROLES);
-  const hariIni = startOfHari();
+  const hariIni = startOfHariWIB();
 
   const [checkpoints, logs] = await Promise.all([
     prisma.checkpoint.findMany({
@@ -169,7 +177,7 @@ export async function getDashboardHariIni(): Promise<{
   const actor = await getCurrentUser();
   const scope = DASHBOARD_ROLES.includes(actor.role) ? "tim" : "pribadi";
   const hanyaMilikSaya = scope === "pribadi" ? actor.id : undefined;
-  const hariIni = startOfHari();
+  const hariIni = startOfHariWIB();
 
   const [absensiRows, checkpoints, logRows, stats] = await Promise.all([
     prisma.absensi.findMany({
