@@ -42,7 +42,7 @@ export function UsersClient({
         </p>
       ) : null}
 
-      <Card className="p-4 sm:p-5">
+      <Card className="p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">Daftar Akun</h2>
           <Button

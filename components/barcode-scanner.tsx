@@ -110,7 +110,7 @@ export function BarcodeScanner({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/80 bg-slate-900">
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-white/80 bg-slate-900">
         <div id={VIEW_ID} className="h-full w-full" />
         {!live ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center">

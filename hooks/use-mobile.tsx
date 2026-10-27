@@ -4,8 +4,11 @@ const MOBILE_BREAKPOINT = 768;
 
 /**
  * true bila lebar layar < 768px.
- * Pakai useSyncExternalStore (bukan setState di effect) agar bebas cascading
- * render dan aman saat SSR: server selalu menganggap false.
+ *
+ * Server selalu menganggap false (desktop) lewat `getServerSnapshot`.
+ * Kebutuhan bentuk DOM tidak lagi bergantung pada nilai ini — lihat komentar
+ * pada komponen `Sidebar` di components/ui/sidebar.tsx — sehingga aman dari
+ * hydration mismatch meski konteks terbaca setelah mount.
  */
 export function useIsMobile() {
   return React.useSyncExternalStore(

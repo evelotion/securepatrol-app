@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 
 import { login, type LoginState } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(
@@ -22,8 +24,7 @@ export function LoginForm() {
         <label className="field-label" htmlFor="identifier">
           Email / Username
         </label>
-        <input
-          className="input"
+        <Input
           id="identifier"
           name="identifier"
           type="text"
@@ -37,8 +38,7 @@ export function LoginForm() {
         <label className="field-label" htmlFor="password">
           Password
         </label>
-        <input
-          className="input"
+        <Input
           id="password"
           name="password"
           type="password"
@@ -48,9 +48,9 @@ export function LoginForm() {
         />
       </div>
 
-      <button className="btn btn-primary mt-1 w-full" type="submit" disabled={pending}>
+      <Button type="submit" className="mt-1 w-full" disabled={pending}>
         {pending ? "Memeriksa…" : "Masuk"}
-      </button>
+      </Button>
     </form>
   );
 }

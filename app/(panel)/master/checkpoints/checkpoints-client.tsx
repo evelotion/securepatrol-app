@@ -45,7 +45,7 @@ export function CheckpointsClient({
         </p>
       ) : null}
 
-      <Card className="p-4 sm:p-5">
+      <Card className="p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">Daftar Titik Patroli</h2>
           <Button
@@ -337,21 +337,21 @@ function PrintLabel({
         </div>
 
         <div className="print-area rounded-lg bg-white p-5 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+          <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             SecurePatrol
           </p>
           <div
             className="qr-box mx-auto my-3 h-44 w-44"
             dangerouslySetInnerHTML={{ __html: checkpoint.qrSvg }}
           />
-          <p className="text-base font-bold text-slate-900">
+          <p className="text-base font-bold text-foreground">
             {checkpoint.namaTitik}
           </p>
-          <p className="mt-1 font-mono text-sm text-slate-600">
+          <p className="mt-1 font-mono text-sm text-muted-foreground">
             {checkpoint.kodeBarcode}
           </p>
           {checkpoint.keterangan ? (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {checkpoint.keterangan}
             </p>
           ) : null}

@@ -137,12 +137,12 @@ export function CameraCapture({
   if (value) {
     return (
       <div className="flex flex-col gap-2">
-        <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-slate-900/5">
+        <div className="relative overflow-hidden rounded-lg border border-white/80 bg-slate-900/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value}
             alt={`Pratinjau ${label}`}
-            className="mx-auto max-h-72 w-auto rounded-2xl object-contain"
+            className="mx-auto max-h-72 w-auto rounded-lg object-contain"
           />
           <span className="badge badge-green absolute left-2 top-2">
             {label} tersimpan
@@ -160,7 +160,7 @@ export function CameraCapture({
   if (mode === "live") {
     return (
       <div className="flex flex-col gap-2">
-        <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-slate-900">
+        <div className="relative overflow-hidden rounded-lg border border-white/80 bg-slate-900">
           <video
             ref={videoRef}
             playsInline
@@ -199,7 +199,7 @@ export function CameraCapture({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-white/90 bg-white/40 px-3 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-white/90 bg-white/40 px-3 py-3">
         <div>
           <p className="text-sm font-medium">{label}</p>
           <p className="text-xs text-muted-foreground">

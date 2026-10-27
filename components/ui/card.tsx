@@ -9,7 +9,9 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border bg-card text-card-foreground backdrop-blur-md",
+      // Surface glass: transparan + blur + garis tipis + bayangan lembut,
+      // identik dengan utilitas .glass/.glass-strong di globals.css.
+      "rounded-xl border bg-card text-card-foreground shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur-md",
       className
     )}
     {...props}

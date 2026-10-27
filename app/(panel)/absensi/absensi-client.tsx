@@ -113,13 +113,13 @@ function AbsenCard({
             <img
               src={fotoTersimpan}
               alt={`Bukti ${label}`}
-              className="h-24 w-24 rounded-2xl border border-white/80 object-cover"
+              className="h-24 w-24 shrink-0 rounded-xl border border-white/80 object-cover"
             />
-            <div className="text-sm text-slate-600">
-              <p className="font-semibold text-slate-800">
+            <div className="min-w-0 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">
                 Tercatat pukul {jamTersimpan}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 break-words text-xs text-muted-foreground">
                 {koordinatTersimpan
                   ? `GPS: ${koordinatTersimpan}`
                   : "Tanpa koordinat GPS"}
@@ -127,7 +127,7 @@ function AbsenCard({
             </div>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-slate-500">{disabledReason}</p>
+          <p className="mt-4 text-sm text-muted-foreground">{disabledReason}</p>
         )}
       </Card>
     );
@@ -213,10 +213,10 @@ function GpsPanel({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="field-label">Lokasi GPS</p>
-          <p className="truncate text-sm font-semibold text-slate-800">
+          <p className="truncate text-sm font-semibold text-foreground">
             {koordinat ?? "Belum ada koordinat"}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             {gps.loading
               ? "Mengambil lokasi…"
               : gps.posisi?.accuracy

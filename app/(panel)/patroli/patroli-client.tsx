@@ -107,10 +107,10 @@ export function PatroliClient({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="field-label">Lokasi GPS</p>
-                <p className="truncate text-sm font-semibold text-slate-800">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {koordinat ?? "Belum ada koordinat"}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {gps.loading
                     ? "Mengambil lokasi…"
                     : gps.posisi?.accuracy
@@ -170,7 +170,7 @@ export function PatroliClient({
 
           <ul className="mt-4 flex flex-col gap-2">
             {checkpoints.length === 0 ? (
-              <li className="text-sm text-slate-500">
+              <li className="text-sm text-muted-foreground">
                 Belum ada titik patroli aktif. Hubungi SUPER_ADMIN.
               </li>
             ) : (
@@ -180,10 +180,10 @@ export function PatroliClient({
                   className="glass-inset flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800">
+                    <p className="truncate text-sm font-semibold text-foreground">
                       {cp.namaTitik}
                     </p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="truncate text-xs text-muted-foreground">
                       {cp.dikunjungi
                         ? `${cp.pengunjung ?? "Anda"} · ${cp.kunjunganTerakhir ? formatJam(cp.kunjunganTerakhir) : ""}`
                         : cp.kodeBarcode}
@@ -210,7 +210,7 @@ export function PatroliClient({
 
           <ul className="mt-4 flex flex-col gap-2">
             {logs.length === 0 ? (
-              <li className="text-sm text-slate-500">
+              <li className="text-sm text-muted-foreground">
                 Belum ada kunjungan tercatat hari ini.
               </li>
             ) : (
@@ -220,10 +220,10 @@ export function PatroliClient({
                   className="glass-inset flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800">
+                    <p className="truncate text-sm font-semibold text-foreground">
                       {log.namaCheckpoint}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground">
                       {formatJam(log.waktu)} · {log.namaUser}
                     </p>
                   </div>

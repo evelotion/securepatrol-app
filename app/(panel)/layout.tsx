@@ -9,10 +9,17 @@ import { FIELD_ROLES, ROLE_LABEL } from "@/lib/roles";
 import { AppSidebar, MobileBar, type NavItem, type NavUser } from "./app-nav";
 
 /**
- * Shell aplikasi setelah login (fondasi tata letak shadcn-admin):
- * SidebarProvider -> Sidebar (statis di kiri, md+) + SidebarInset (konten).
- * Mobile memakai Sheet drawer yang dibuka SidebarTrigger di app bar.
- * Ses user dibaca di dalam Suspense (Cache Components).
+ * Shell aplikasi setelah login (fondasi tata letak shadcn-admin).
+ *
+ * Struktur wajib anti-tumpuk:
+ *   SidebarProvider = `flex h-screen overflow-hidden`
+ *     ├── AppSidebar  -> sidebar statis w-64 (16rem) di kiri (md+)
+ *     └── SidebarInset -> `flex-1 h-full overflow-y-auto` di kanan sidebar
+ *
+ * Tinggi layar dikunci, jadi scrolling hanya terjadi di area konten:
+ * sidebar tidak pernah turun ke bawah & konten tidak bertumpuk atas-bawah
+ * di layar desktop. Mobile memakai Sheet drawer yang dibuka SidebarTrigger
+ * di app bar. Ses user dibaca di dalam Suspense (Cache Components).
  */
 export default function PanelLayout({
   children,
@@ -20,7 +27,7 @@ export default function PanelLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-screen max-h-dvh overflow-hidden">
       <Suspense fallback={<ShellFallback>{children}</ShellFallback>}>
         <PanelShell>{children}</PanelShell>
       </Suspense>
@@ -54,10 +61,12 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <AppSidebar items={items} user={navUser} />
-      <SidebarInset>
+      <SidebarInset className="h-full overflow-hidden">
         <MobileBar items={items} />
-        <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-          {children}
+        <div className="min-h-0 w-full flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            {children}
+          </div>
         </div>
       </SidebarInset>
     </>
@@ -75,12 +84,14 @@ function ShellFallback({ children }: { children: React.ReactNode }) {
         <Skeleton className="h-5 w-4/5" />
         <Skeleton className="h-5 w-3/5" />
       </div>
-      <SidebarInset>
+      <SidebarInset className="h-full overflow-hidden">
         <div className="flex h-12 shrink-0 items-center border-b border-sidebar-border bg-sidebar px-3 md:hidden">
           <Skeleton className="h-5 w-28" />
         </div>
-        <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-          {children}
+        <div className="min-h-0 w-full flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            {children}
+          </div>
         </div>
       </SidebarInset>
     </>
