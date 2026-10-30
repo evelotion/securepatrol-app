@@ -4,20 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
-import { formatJam, parseFoto, parseKoordinat } from "@/lib/bukti";
+import { formatJam, parseKoordinat } from "@/lib/bukti";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
-import { PATROL_RADIUS_M, statusValidasi } from "@/lib/geo";
+import { validasiScan, type Koordinat } from "@/lib/geo";
 import { prisma } from "@/lib/prisma";
 import { FIELD_ROLES } from "@/lib/roles";
 
-/**
- * Blok 5 — Catat satu kunjungan patroli.
- *
- * Alur PRD §6: staf scan barcode titik -> ambil foto area -> sistem memvalidasi
- * jarak GPS HP terhadap koordinat checkpoint (radius `PATROL_RADIUS_M`).
- * Hasil validasi disimpan sebagai `status_valid`.
- */
+/** Catat kunjungan patroli yang dinilai server-side menurut aturan Fase 2. */
 export async function catatPatroli(
   _prev: FormState,
   formData: FormData,
@@ -29,8 +23,12 @@ export async function catatPatroli(
     return { errors: { kode: "Belum ada barcode yang dipindai." } };
   }
 
-  const foto = parseFoto(str(formData.get("foto")));
-  if (!foto.ok) return { errors: { foto: foto.error } };
+  const fotoKey = str(formData.get("foto"));
+  const foto = await prisma.foto.findFirst({
+    where: { key: fotoKey, userId: actor.id },
+    select: { key: true },
+  });
+  if (!foto) return { errors: { foto: "Foto tidak valid atau bukan milik Anda." } };
 
   const koordinat = parseKoordinat(
     str(formData.get("lat")),
@@ -38,8 +36,20 @@ export async function catatPatroli(
   );
   if (!koordinat.ok) return { errors: { gps: koordinat.error } };
 
+  const accuracyRaw = str(formData.get("accuracy"));
+  const accuracyValue = accuracyRaw === "" ? null : Number(accuracyRaw);
+  const akurasiM =
+    accuracyValue !== null && Number.isFinite(accuracyValue) && accuracyValue >= 0
+      ? accuracyValue
+      : null;
+  const posisiHP: Koordinat | null =
+    koordinat.value.lat === null || koordinat.value.long === null
+      ? null
+      : { lat: koordinat.value.lat, long: koordinat.value.long };
+
   const checkpoint = await prisma.checkpoint.findFirst({
     where: { kodeBarcode: kode, aktif: true },
+    select: { id: true, namaTitik: true, lat: true, long: true },
   });
   if (!checkpoint) {
     return {
@@ -49,32 +59,82 @@ export async function catatPatroli(
     };
   }
 
-  const posisiHP =
-    koordinat.value.lat === null || koordinat.value.long === null
-      ? null
-      : { lat: koordinat.value.lat, long: koordinat.value.long };
+  const now = new Date();
+  const sepuluhMenitLalu = new Date(now.getTime() - 10 * 60 * 1000);
+  const [absensiTerbuka, scanCheckpointSebelumnya, scanSebelumnya] =
+    await Promise.all([
+      prisma.absensi.findFirst({
+        where: { userId: actor.id, waktuKeluar: null },
+        select: { id: true },
+      }),
+      prisma.patroliLog.findFirst({
+        where: {
+          userId: actor.id,
+          checkpointId: checkpoint.id,
+          waktu: { gte: sepuluhMenitLalu },
+        },
+        orderBy: { waktu: "desc" },
+        select: { waktu: true },
+      }),
+      prisma.patroliLog.findFirst({
+        where: { userId: actor.id },
+        orderBy: { waktu: "desc" },
+        select: { waktu: true, lat: true, long: true },
+      }),
+    ]);
 
-  const posisiCheckpoint =
+  const posisiCheckpoint: Koordinat | null =
     checkpoint.lat === null || checkpoint.long === null
       ? null
       : {
           lat: Number(checkpoint.lat.toString()),
           long: Number(checkpoint.long.toString()),
         };
+  const posisiScanSebelumnya: Koordinat | null =
+    scanSebelumnya?.lat === null ||
+    scanSebelumnya?.lat === undefined ||
+    scanSebelumnya.long === null
+      ? null
+      : {
+          lat: Number(scanSebelumnya.lat.toString()),
+          long: Number(scanSebelumnya.long.toString()),
+        };
 
-  const { statusValid, jarak } = statusValidasi(posisiHP, posisiCheckpoint);
+  const hasil = validasiScan({
+    checkpointId: checkpoint.id,
+    sekarang: now,
+    posisiHP,
+    akurasiM,
+    posisiCheckpoint,
+    scanSebelumnya: scanSebelumnya
+      ? {
+        waktu: scanSebelumnya.waktu,
+          posisi: posisiScanSebelumnya,
+        }
+      : null,
+    scanCheckpointSebelumnya: scanCheckpointSebelumnya?.waktu ?? null,
+    sedangBertugas: absensiTerbuka !== null,
+  });
 
-  const now = new Date();
+  // Cooldown dan syarat sedang bertugas menolak request tanpa menyimpan log.
+  if (hasil.ditolak) {
+    return { errors: { gps: hasil.pesanTolak ?? "Scan patroli ditolak." } };
+  }
+
   const log = await prisma.patroliLog.create({
     data: {
       userId: actor.id,
       checkpointId: checkpoint.id,
       waktu: now,
-      foto: foto.value,
+      foto: foto.key,
       lat: posisiHP?.lat ?? null,
       long: posisiHP?.long ?? null,
-      statusValid,
+      status: hasil.status,
+      akurasiM: hasil.akurasiM,
+      jarakM: hasil.jarakM,
+      alasan: hasil.alasan,
     },
+    select: { id: true },
   });
 
   await writeAudit({
@@ -86,27 +146,28 @@ export async function catatPatroli(
       checkpointId: checkpoint.id,
       namaTitik: checkpoint.namaTitik,
       kodeBarcode: kode,
-      lat: posisiHP?.lat ?? null,
-      long: posisiHP?.long ?? null,
-      statusValid,
-      jarak,
-      foto: "base64",
+      posisiHP,
+      status: hasil.status,
+      alasan: hasil.alasan,
+      jarakM: hasil.jarakM,
+      akurasiM: hasil.akurasiM,
+      fotoKey: foto.key,
     },
   });
 
   revalidatePath("/patroli");
   revalidatePath("/dashboard");
 
+  const pesanStatus =
+    hasil.status === "VALID"
+      ? "valid"
+      : hasil.status === "BELUM_TERVERIFIKASI"
+        ? "belum terverifikasi"
+        : "tidak valid";
+
   return {
     ok: true,
-    message: `${checkpoint.namaTitik} tercatat pukul ${formatJam(now)}.`,
-    ...(statusValid
-      ? {}
-      : {
-          warning:
-            jarak === null
-              ? "HP tidak mengirim lokasi — kunjungan ditandai TIDAK VALID."
-              : `Jarak ±${Math.round(jarak)} m dari titik (maksimal ${PATROL_RADIUS_M} m) — kunjungan ditandai TIDAK VALID.`,
-        }),
+    message: `${checkpoint.namaTitik} tercatat pukul ${formatJam(now)} (${pesanStatus}).`,
+    ...(hasil.alasan ? { warning: hasil.alasan } : {}),
   };
 }

@@ -2,240 +2,282 @@
 
 import { useActionState, useState } from "react";
 
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Navigation,
+} from "lucide-react";
+
+import Link from "next/link";
+
 import { checkIn, checkOut } from "@/app/actions/absensi";
 import { CameraCapture } from "@/components/camera-capture";
+import { GpsStatus } from "@/components/gps-status";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { FormState } from "@/lib/form";
 import { formatJam } from "@/lib/format";
 import type { AbsensiHariIni } from "@/lib/types";
 import { useGeolocation, type GeolocationState } from "@/lib/use-geolocation";
+import { shiftDariJam } from "@/lib/ui";
+import { jamWIB } from "@/lib/waktu";
 
-/**
- * Blok 4 — tombol Absen Masuk / Absen Keluar.
- *
- * Setiap kartu punya selfie (CameraCapture) + koordinat (useGeolocation)
- * yang dikirim sebagai input tersembunyi ke Server Action `checkIn`/`checkOut`.
- */
-export function AbsensiClient({ absensi }: { absensi: AbsensiHariIni | null }) {
-  const gps = useGeolocation();
+export function AbsensiClient({
+  absensi,
+  actorName,
+}: {
+  absensi: AbsensiHariIni | null;
+  actorName: string;
+}) {
+  if (absensi && absensi.waktuKeluar) {
+    return <RingkasanSelesai absensi={absensi} />;
+  }
 
-  const belumMasuk = absensi === null;
-  const belumKeluar = absensi !== null && absensi.waktuKeluar === null;
-  const selesai = absensi !== null && absensi.waktuKeluar !== null;
+  const mode = absensi === null ? "masuk" : "keluar";
+  const shift = absensi
+    ? shiftDariJam(Number(jamWIB(new Date(absensi.waktuMasuk)).slice(0, 2)))
+    : null;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <AbsenCard
-        mode="masuk"
-        gps={gps}
-        disabled={!belumMasuk}
-        disabledReason={
-          belumMasuk
-            ? null
-            : selesai
-              ? "Absensi hari ini sudah ditutup."
-              : `Sudah absen masuk pukul ${formatJam(absensi.waktuMasuk)}.`
-        }
-        fotoTersimpan={absensi?.fotoMasuk ?? null}
-        jamTersimpan={absensi ? formatJam(absensi.waktuMasuk) : null}
-        koordinatTersimpan={
-          absensi?.latMasuk && absensi?.longMasuk
-            ? `${absensi.latMasuk}, ${absensi.longMasuk}`
-            : null
-        }
-      />
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start gap-2 rounded-[var(--radius-sm)] border border-border bg-card px-3 py-2.5 text-sm">
+        <Clock
+          className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <p className="min-w-0 text-muted-foreground">
+          {absensi ? (
+            <>
+              Sudah masuk pukul{" "}
+              <span className="mono-num font-semibold text-foreground">
+                {formatJam(absensi.waktuMasuk)}
+              </span>
+              {shift ? ` · ${shift}` : ""}. Selfie berikutnya untuk absen keluar.
+            </>
+          ) : (
+            <>Belum ada absensi hari ini. Mulai dengan selfie masuk.</>
+          )}
+        </p>
+      </div>
 
-      <AbsenCard
-        mode="keluar"
-        gps={gps}
-        disabled={!belumKeluar}
-        disabledReason={
-          belumKeluar
-            ? null
-            : belumMasuk
-              ? "Belum ada absen masuk hari ini."
-              : `Sudah absen keluar pukul ${formatJam(absensi.waktuKeluar ?? "")}.`
-        }
-        fotoTersimpan={absensi?.fotoKeluar ?? null}
-        jamTersimpan={absensi?.waktuKeluar ? formatJam(absensi.waktuKeluar) : null}
-        koordinatTersimpan={
-          absensi?.latKeluar && absensi?.longKeluar
-            ? `${absensi.latKeluar}, ${absensi.longKeluar}`
-            : null
-        }
-      />
+      <AbsenFlow mode={mode} actorName={actorName} absensi={absensi} />
     </div>
   );
 }
 
-function AbsenCard({
+function AbsenFlow({
   mode,
-  gps,
-  disabled,
-  disabledReason,
-  fotoTersimpan,
-  jamTersimpan,
-  koordinatTersimpan,
+  actorName,
+  absensi,
 }: {
   mode: "masuk" | "keluar";
-  gps: GeolocationState;
-  disabled: boolean;
-  disabledReason: string | null;
-  fotoTersimpan: string | null;
-  jamTersimpan: string | null;
-  koordinatTersimpan: string | null;
+  actorName: string;
+  absensi: AbsensiHariIni | null;
 }) {
   const action = mode === "masuk" ? checkIn : checkOut;
+  const label = mode === "masuk" ? "Absen Masuk" : "Absen Keluar";
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     action,
     undefined,
   );
-
+  const gps = useGeolocation();
   const [foto, setFoto] = useState<string | null>(null);
-  const label = mode === "masuk" ? "Absen Masuk" : "Absen Keluar";
+  const [waktuFoto, setWaktuFoto] = useState<Date | null>(null);
 
   const koordinat = gps.posisi
     ? `${gps.posisi.lat.toFixed(6)}, ${gps.posisi.long.toFixed(6)}`
     : null;
 
-  if (disabled) {
-    return (
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="section-title">{label}</h2>
-          <span className="badge badge-slate">Nonaktif</span>
-        </div>
-
-        {fotoTersimpan ? (
-          <div className="mt-4 flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={fotoTersimpan}
-              alt={`Bukti ${label}`}
-              className="h-24 w-24 shrink-0 rounded-xl border border-white/80 object-cover"
-            />
-            <div className="min-w-0 text-sm text-muted-foreground">
-              <p className="font-semibold text-foreground">
-                Tercatat pukul {jamTersimpan}
-              </p>
-              <p className="mt-1 break-words text-xs text-muted-foreground">
-                {koordinatTersimpan
-                  ? `GPS: ${koordinatTersimpan}`
-                  : "Tanpa koordinat GPS"}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">{disabledReason}</p>
-        )}
-      </Card>
-    );
+  function pilihFoto(key: string | null) {
+    setFoto(key);
+    setWaktuFoto(key ? new Date() : null);
   }
 
   return (
-    <Card className="p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="section-title">{label}</h2>
-        <span className="badge badge-amber">Menunggu</span>
-      </div>
+    <form action={formAction} className="flex flex-col gap-4">
+      {state?.message ? (
+        <p role="status" className="alert-success">
+          {state.message}
+        </p>
+      ) : null}
+      {state?.errors
+        ? Object.values(state.errors).map((pesan) => (
+            <p key={pesan} role="alert" className="alert-error">
+              {pesan}
+            </p>
+          ))
+        : null}
+      {state?.warning ? (
+        <p role="status" className="alert-warn">
+          {state.warning}
+        </p>
+      ) : null}
 
-      <form action={formAction} className="mt-4 flex flex-col gap-4">
-        {state?.message ? (
-          <p role="status" className="alert-success">
-            {state.message}
-          </p>
-        ) : null}
-        {state?.errors
-          ? Object.values(state.errors).map((pesan) => (
-              <p key={pesan} role="alert" className="alert-error">
-                {pesan}
-              </p>
-            ))
-          : null}
-        {state?.warning ? (
-          <p role="status" className="alert-warn">
-            {state.warning}
-          </p>
-        ) : null}
+      <Card className="overflow-hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="min-w-0">
+            <p className="section-title">{label}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {mode === "masuk"
+                ? "Posisikan wajah di dalam bingkai."
+                : `Masuk ${formatJam(absensi?.waktuMasuk ?? "")} · ambil selfie keluar.`}
+            </p>
+          </div>
+          <span className="badge badge-slate shrink-0">Selfie</span>
+        </div>
 
-        <CameraCapture
-          value={foto}
-          onChange={setFoto}
-          label="Selfie"
-          facing="user"
-          hint="Wajib — selfie terbaru Anda hari ini."
-        />
-        {state?.errors?.foto && foto ? (
-          <p className="field-error">{state.errors.foto}</p>
-        ) : null}
+        <div className="p-4">
+          <CameraCapture
+            value={foto}
+            onChange={pilihFoto}
+            label="Selfie"
+            facing="user"
+            hero
+            faceFrame
+            watermark={watermarkText(gps, actorName)}
+          />
+        </div>
+      </Card>
 
-        <GpsPanel gps={gps} koordinat={koordinat} />
+      <GpsStatus gps={gps} koordinat={koordinat} />
 
-        <input type="hidden" name="foto" value={foto ?? ""} />
-        <input
-          type="hidden"
-          name="lat"
-          value={gps.posisi ? String(gps.posisi.lat) : ""}
-        />
-        <input
-          type="hidden"
-          name="long"
-          value={gps.posisi ? String(gps.posisi.long) : ""}
-        />
+      {foto ? (
+        <Card className="p-4">
+          <h2 className="section-title">Konfirmasi absensi</h2>
+          <dl className="mt-3 flex flex-col gap-2.5 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <dt className="text-muted-foreground">Jam</dt>
+              <dd className="mono-num text-right font-semibold text-foreground">
+                {waktuFoto ? formatJam(waktuFoto) : "—"} WIB
+              </dd>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <dt className="shrink-0 text-muted-foreground">Lokasi</dt>
+              <dd className="min-w-0 text-right font-medium text-foreground">
+                {koordinat ?? "GPS tidak tersedia"}
+              </dd>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <dt className="text-muted-foreground">Akurasi</dt>
+              <dd className="text-right font-medium text-foreground">
+                {gps.posisi?.accuracy
+                  ? `±${Math.round(gps.posisi.accuracy)} m`
+                  : "Tidak diketahui"}
+              </dd>
+            </div>
+          </dl>
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={pending || foto === null}
-        >
-          {pending
-            ? "Menyimpan…"
-            : foto === null
-              ? "Ambil selfie dulu"
-              : label}
-        </Button>
-      </form>
-    </Card>
+          <input type="hidden" name="foto" value={foto} />
+          <input
+            type="hidden"
+            name="lat"
+            value={gps.posisi ? String(gps.posisi.lat) : ""}
+          />
+          <input
+            type="hidden"
+            name="long"
+            value={gps.posisi ? String(gps.posisi.long) : ""}
+          />
+
+          <Button type="submit" size="lg" className="mt-4 w-full" disabled={pending}>
+            {pending ? "Mengirim…" : `Kirim ${label}`}
+          </Button>
+        </Card>
+      ) : (
+        <p className="text-center text-sm text-muted-foreground">
+          Ambil selfie untuk melanjutkan.
+        </p>
+      )}
+    </form>
   );
 }
 
-/** Peta kecil lokasi berupa ringkasan koordinat + akurasi + tombol refresh. */
-function GpsPanel({
-  gps,
-  koordinat,
-}: {
-  gps: GeolocationState;
-  koordinat: string | null;
-}) {
+
+function RingkasanSelesai({ absensi }: { absensi: AbsensiHariIni }) {
   return (
-    <div className="glass-inset rounded-lg p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="field-label">Lokasi GPS</p>
-          <p className="truncate text-sm font-semibold text-foreground">
-            {koordinat ?? "Belum ada koordinat"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {gps.loading
-              ? "Mengambil lokasi…"
-              : gps.posisi?.accuracy
-                ? `Akurasi ±${Math.round(gps.posisi.accuracy)} m`
-                : "Kirim tanpa GPS bila izin ditolak (akan tercatat tanpa koordinat)."}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          onClick={gps.refresh}
-          disabled={gps.loading}
-        >
-          {gps.loading ? "…" : "Refresh"}
-        </Button>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start gap-2 rounded-[var(--radius-sm)] border border-border bg-card px-3 py-2.5">
+        <CheckCircle2
+          className="mt-0.5 size-4 shrink-0 text-[var(--status-ok-text)]"
+          aria-hidden="true"
+        />
+        <p className="text-sm text-muted-foreground">
+          Absensi hari ini sudah lengkap. Sampai jumpa di shift berikutnya.
+        </p>
       </div>
-      {gps.error ? <p className="field-error mt-2">{gps.error}</p> : null}
+
+      <Card className="p-4">
+        <h2 className="section-title">Bukti absensi</h2>
+        <ul className="mt-3 flex flex-col gap-4">
+          <BuktiBaris
+            judul="Masuk"
+            jam={absensi.waktuMasuk}
+            fotoUrl={absensi.fotoMasukUrl}
+            lat={absensi.latMasuk}
+            long={absensi.longMasuk}
+          />
+          <BuktiBaris
+            judul="Keluar"
+            jam={absensi.waktuKeluar ?? ""}
+            fotoUrl={absensi.fotoKeluarUrl}
+            lat={absensi.latKeluar}
+            long={absensi.longKeluar}
+          />
+        </ul>
+      </Card>
+
+      <Button asChild variant="outline" className="w-full">
+        <Link href="/beranda">
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Kembali ke Beranda
+        </Link>
+      </Button>
     </div>
   );
+}
+
+function BuktiBaris({
+  judul,
+  jam,
+  fotoUrl,
+  lat,
+  long,
+}: {
+  judul: string;
+  jam: string;
+  fotoUrl: string | null;
+  lat: string | null;
+  long: string | null;
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      {fotoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={fotoUrl}
+          alt={`Selfie absen ${judul}`}
+          className="size-20 shrink-0 rounded-[var(--radius-sm)] border border-border object-cover"
+        />
+      ) : (
+        <span className="flex size-20 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-muted text-muted-foreground">
+          <Navigation className="size-5" aria-hidden="true" />
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-foreground">{judul}</p>
+        <p className="mono-num text-sm text-foreground">{formatJam(jam)} WIB</p>
+        <p className="mt-0.5 break-words text-xs text-muted-foreground">
+          {lat && long ? `${lat}, ${long}` : "Tanpa koordinat GPS"}
+        </p>
+      </div>
+    </li>
+  );
+}
+
+function watermarkText(gps: GeolocationState, actorName: string): string {
+  const coordinateText = gps.posisi
+    ? `${gps.posisi.lat.toFixed(6)}, ${gps.posisi.long.toFixed(6)}`
+    : "Lokasi GPS tidak tersedia";
+  return `${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}\n${coordinateText}\n${actorName}`;
 }

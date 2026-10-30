@@ -1,3 +1,8 @@
+import { WifiOff } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
 /** Halaman fallback ketika pengguna offline (dirujuk service worker). */
 export const metadata = {
   title: "Offline",
@@ -5,20 +10,21 @@ export const metadata = {
 
 export default function OfflinePage() {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="glass rounded-2xl p-8 max-w-sm">
-        <div className="text-4xl">📡</div>
-        <h1 className="mt-3 text-xl font-semibold text-slate-800">
+    <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-10 text-center">
+      <Card className="w-full max-w-sm p-6">
+        <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <WifiOff className="size-6" aria-hidden="true" />
+        </span>
+        <h1 className="mt-3 text-lg font-semibold text-foreground">
           Anda sedang offline
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Koneksi internet terputus. Silakan coba lagi setelah jaringan
-          pulih.
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Koneksi internet terputus. Silakan coba lagi setelah jaringan pulih.
         </p>
-        <a href="/dashboard" className="btn btn-primary mt-5 w-full">
-          Coba lagi
-        </a>
-      </div>
+        <Button asChild className="mt-5 w-full">
+          <a href="/dashboard">Coba lagi</a>
+        </Button>
+      </Card>
     </main>
   );
 }

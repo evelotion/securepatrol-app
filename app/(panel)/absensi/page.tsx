@@ -1,5 +1,10 @@
 import { Suspense } from "react";
 
+import Link from "next/link";
+
+import { ArrowLeft } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { formatJam, formatTanggal } from "@/lib/format";
@@ -13,15 +18,11 @@ export default function AbsensiPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-7 w-56" />
-            <Skeleton className="h-4 w-72" />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Skeleton className="h-96 rounded-xl" />
-            <Skeleton className="h-96 rounded-xl" />
-          </div>
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-9 w-40" />
+          <Skeleton className="h-24 rounded-[var(--radius)]" />
+          <Skeleton className="h-64 rounded-[var(--radius)]" />
+          <Skeleton className="h-20 rounded-[var(--radius)]" />
         </div>
       }
     >
@@ -32,30 +33,39 @@ export default function AbsensiPage() {
 
 async function AbsensiSection() {
   const { actor, absensi } = await getAbsensiSaya();
-  const hariIni = new Date();
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="page-title">Absensi Kehadiran</h1>
-          <p className="page-sub mt-1">
-            {formatTanggal(hariIni)} · {actor.nama}
+    <div className="flex flex-col gap-4">
+      <header className="flex items-start gap-1">
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="-ml-2 shrink-0"
+          aria-label="Kembali ke Beranda"
+        >
+          <Link href="/beranda">
+            <ArrowLeft className="size-5" aria-hidden="true" />
+          </Link>
+        </Button>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <h1 className="page-title">Absensi</h1>
+          <p className="page-sub mt-0.5 truncate">
+            {formatTanggal(new Date())} · {actor.nama}
             {actor.regu ? ` · ${actor.regu}` : ""}
           </p>
         </div>
-        <span
-          className={`badge ${absensi ? "badge-green" : "badge-amber"}`}
-        >
-          {absensi
-            ? absensi.waktuKeluar
-              ? "Selesai hari ini"
-              : `Masuk ${formatJam(absensi.waktuMasuk)}`
-            : "Belum absen masuk"}
-        </span>
       </header>
 
-      <AbsensiClient absensi={absensi} />
+      {absensi ? (
+        <p className="text-sm text-muted-foreground">
+          {absensi.waktuKeluar
+            ? `Masuk ${formatJam(absensi.waktuMasuk)} · Keluar ${formatJam(absensi.waktuKeluar)}`
+            : `Sedang bertugas sejak ${formatJam(absensi.waktuMasuk)}`}
+        </p>
+      ) : null}
+
+      <AbsensiClient absensi={absensi} actorName={actor.nama} />
     </div>
   );
 }

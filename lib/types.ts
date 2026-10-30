@@ -1,4 +1,5 @@
 import type { Role } from "@/generated/prisma/client";
+import type { StatusScan } from "@/lib/geo";
 
 /** DTO user yang aman dikirim ke client component (tanpa hash password). */
 export type UserRow = {
@@ -45,6 +46,8 @@ export type AbsensiHariIni = {
   longKeluar: string | null;
   fotoMasuk: string | null;
   fotoKeluar: string | null;
+  fotoMasukUrl: string | null;
+  fotoKeluarUrl: string | null;
 };
 
 /** Baris absensi tim untuk dashboard — foto TIDAK ikut (hemat payload). */
@@ -69,7 +72,10 @@ export type CheckpointProgress = {
   kunjunganTerakhir: string | null;
   pengunjung: string | null;
   jumlahValid: number;
-  jumlahInvalid: number;
+  jumlahTidakValid: number;
+  jumlahBelumTerverifikasi: number;
+  statusTerakhir: StatusScan | null;
+  alasanTerakhir: string | null;
 };
 
 /** Satu log patroli untuk ditampilkan (tanpa foto base64). */
@@ -78,7 +84,10 @@ export type PatroliLogRow = {
   waktu: string;
   namaUser: string;
   namaCheckpoint: string;
-  statusValid: boolean;
+  status: StatusScan;
+  alasan: string | null;
+  jarakM: number | null;
+  akurasiM: number | null;
 };
 
 /** Rute patroli milik satu staf hari ini. */
@@ -96,6 +105,7 @@ export type MonitoringSummary = {
   logHariIni: number;
   logValid: number;
   logInvalid: number;
+  logBelumTerverifikasi: number;
 };
 
 /** Data dashboard Blok 6 — satu bentuk untuk semua role. */

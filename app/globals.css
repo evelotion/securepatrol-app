@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Dark mode dikendalikan kelas `.dark` di <html> (sistem + toggle manual). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   /* Token shadcn/ui (Tailwind v4). */
   --color-background: var(--background);
@@ -30,8 +33,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-status-ok: var(--status-ok);
+  --color-status-warn: var(--status-warn);
+  --color-status-bad: var(--status-bad);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
@@ -46,45 +52,93 @@
 }
 
 :root {
-  /* ---- Token anti-slop: netral terang, aksen tunggal, garis tipis ---- */
-  --background: #f4f5f7;
-  --foreground: #16202f;
-  --card: rgba(255, 255, 255, 0.66);
-  --card-foreground: #16202f;
-  --popover: #ffffff;
-  --popover-foreground: #16202f;
-  --primary: #4f46e5;
-  --primary-foreground: #ffffff;
-  --secondary: #eceef2;
-  --secondary-foreground: #16202f;
-  --muted: #eceef2;
-  --muted-foreground: #5b6472;
-  --accent: #eceef2;
-  --accent-foreground: #16202f;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --border: rgba(15, 23, 42, 0.08);
-  --input: rgba(15, 23, 42, 0.14);
-  --ring: rgba(79, 70, 229, 0.45);
-  --radius: 0.625rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #16202f;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef1f6;
-  --sidebar-accent-foreground: #4338ca;
-  --sidebar-border: rgba(15, 23, 42, 0.08);
-  --sidebar-ring: rgba(79, 70, 229, 0.45);
+  color-scheme: light;
 
-  --glass: rgba(255, 255, 255, 0.66);
-  --glass-strong: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
-    0 12px 28px -18px rgba(15, 23, 42, 0.28);
-  --brand: #4f46e5;
-  /* Skala radius: kartu / kontrol. Dua tingkat, dipakai konsisten. */
-  --radius-card: 1rem;
-  --radius-ctl: 0.625rem;
+  /* ---- Fase 3: permukaan terang, aksen navy, tiga warna status ---- */
+  --background: #f3f5f8;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #e8edf5;
+  --secondary-foreground: #0f172a;
+  --muted: #edf1f6;
+  --muted-foreground: #4e5d75;
+  --accent: #e8edf5;
+  --accent-foreground: #0f172a;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+  --border: #dbe2ec;
+  --input: #c6d0de;
+  --ring: rgba(29, 78, 216, 0.45);
+  --radius: 0.875rem;
+
+  --status-ok: #15803d;
+  --status-warn: #b45309;
+  --status-bad: #b91c1c;
+  /* Varian teks: kontras ≥ 4.5:1 di atas tint status. */
+  --status-ok-text: #166534;
+  --status-warn-text: #92400e;
+  --status-bad-text: #b91c1c;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #1d4ed8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef2f8;
+  --sidebar-accent-foreground: #1d4ed8;
+  --sidebar-border: #dbe2ec;
+  --sidebar-ring: rgba(29, 78, 216, 0.45);
+
+  /* Blur & transparansi hanya dipakai header dan bottom bar. */
+  --bar: rgba(243, 245, 248, 0.86);
+  --bar-border: #dbe2ec;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0b1220;
+  --foreground: #e6ebf5;
+  --card: #111a2e;
+  --card-foreground: #e6ebf5;
+  --popover: #111a2e;
+  --popover-foreground: #e6ebf5;
+  --primary: #3b82f6;
+  --primary-foreground: #06122a;
+  --secondary: #1b2740;
+  --secondary-foreground: #e6ebf5;
+  --muted: #17223a;
+  --muted-foreground: #a7b4c8;
+  --accent: #1b2740;
+  --accent-foreground: #e6ebf5;
+  --destructive: #ef4444;
+  --destructive-foreground: #0b1220;
+  --border: #243149;
+  --input: #2c3b56;
+  --ring: rgba(59, 130, 246, 0.6);
+
+  --status-ok: #22c55e;
+  --status-warn: #f59e0b;
+  --status-bad: #ef4444;
+  --status-ok-text: #4ade80;
+  --status-warn-text: #fbbf24;
+  --status-bad-text: #fca5a5;
+
+  --sidebar: #0d1626;
+  --sidebar-foreground: #e6ebf5;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #06122a;
+  --sidebar-accent: #17223a;
+  --sidebar-accent-foreground: #93c5fd;
+  --sidebar-border: #243149;
+  --sidebar-ring: rgba(59, 130, 246, 0.6);
+
+  --bar: rgba(11, 18, 32, 0.86);
+  --bar-border: #243149;
 }
 
 * {
@@ -102,28 +156,21 @@ body {
   background-color: var(--background);
 }
 
-/* ---------- Glassmorphism ---------- */
+/* ---------- Header & bottom bar (satu-satunya permukaan ber-blur) ---------- */
 
-.glass {
-  background: var(--glass);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+.app-bar {
+  background: var(--bar);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-color: var(--bar-border);
 }
 
-.glass-strong {
-  background: var(--glass-strong);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-}
-
-/* Inset data: solid, tanpa blur ekstra — blur hanya di kartu induk. */
-.glass-inset {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+.tab-bar {
+  background: var(--bar);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-color: var(--bar-border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ---------- Typography ---------- */
@@ -132,20 +179,35 @@ body {
   font-size: clamp(1.3rem, 2.2vw, 1.6rem);
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: #0f172a;
+  color: var(--foreground);
 }
 
 .page-sub {
-  color: #475569;
-  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
 }
 
 /* Judul di dalam kartu — ukuran & tracking disamakan dengan CardTitle shadcn (text-base). */
 .section-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
-  letter-spacing: -0.025em;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Jam, kode barcode, dan angka tabel. */
+.mono-num {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 /* ---------- Form ---------- */
@@ -153,103 +215,28 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .field-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--muted-foreground);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
-/* Catatan: field form memakai komponen Input shadcn (h-9, px-3, rounded-md),
-   jadi duplikasi .input legacy sudah dihapus agar ukurannya seragam. */
-
-/* Invalid state berlaku untuk Input shadcn. */
 input[aria-invalid="true"],
 select[aria-invalid="true"],
 textarea[aria-invalid="true"] {
-  border-color: rgba(225, 29, 72, 0.6);
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+  border-color: color-mix(in oklab, var(--status-bad) 65%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--status-bad) 16%, transparent);
 }
 
 .field-error {
   font-size: 0.78rem;
-  color: #be123c;
-  font-weight: 500;
-}
-
-/* ---------- Buttons ---------- */
-
-/* Ukuran .btn disamakan persis dengan Button shadcn supaya tidak beda tinggi:
-   default = h-9 (36px) px-4 text-sm; .btn-sm = h-8 (32px) px-3 text-xs. */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  height: 2.25rem;
-  border-radius: var(--radius-ctl);
-  padding: 0 1rem;
-  font-size: 0.875rem;
-  line-height: 1.5rem;
+  color: var(--status-bad-text);
   font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.15s ease,
-    background 0.15s ease;
-  white-space: nowrap;
-}
-
-.btn:active {
-  transform: translateY(1px);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Aksen tunggal: solid, tanpa gradient & tanpa glow. */
-.btn-primary {
-  background: var(--brand);
-  color: #ffffff;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #4338ca;
-}
-
-.btn-ghost {
-  background: #ffffff;
-  border-color: rgba(15, 23, 42, 0.12);
-  color: #334155;
-}
-
-.btn-ghost:hover:not(:disabled) {
-  background: #f1f5f9;
-}
-
-.btn-danger {
-  background: rgba(244, 63, 94, 0.12);
-  border-color: rgba(244, 63, 94, 0.35);
-  color: #be123c;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: rgba(244, 63, 94, 0.2);
-}
-
-.btn-sm {
-  height: 2rem;
-  padding: 0 0.75rem;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  border-radius: 0.5rem;
 }
 
 /* ---------- Badges ---------- */
@@ -259,70 +246,104 @@ textarea[aria-invalid="true"] {
   align-items: center;
   gap: 0.3rem;
   border-radius: 999px;
-  padding: 0.15rem 0.6rem;
+  padding: 0.2rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 650;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
 
 .badge-green {
-  background: rgba(16, 185, 129, 0.16);
-  color: #047857;
+  background: color-mix(in oklab, var(--status-ok) 14%, transparent);
+  border-color: color-mix(in oklab, var(--status-ok) 32%, transparent);
+  color: var(--status-ok-text);
 }
 
 .badge-slate {
-  background: rgba(100, 116, 139, 0.16);
-  color: #475569;
+  background: color-mix(in oklab, var(--muted-foreground) 14%, transparent);
+  border-color: color-mix(in oklab, var(--muted-foreground) 26%, transparent);
+  color: var(--muted-foreground);
 }
 
 .badge-amber {
-  background: rgba(245, 158, 11, 0.18);
-  color: #b45309;
+  background: color-mix(in oklab, var(--status-warn) 16%, transparent);
+  border-color: color-mix(in oklab, var(--status-warn) 34%, transparent);
+  color: var(--status-warn-text);
+}
+
+.badge-red {
+  background: color-mix(in oklab, var(--status-bad) 14%, transparent);
+  border-color: color-mix(in oklab, var(--status-bad) 32%, transparent);
+  color: var(--status-bad-text);
 }
 
 .badge-indigo {
-  background: rgba(79, 70, 229, 0.14);
-  color: #4338ca;
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  border-color: color-mix(in oklab, var(--primary) 28%, transparent);
+  /* Dicampur teks utama agar tetap ≥ 4.5:1 di dark mode. */
+  color: color-mix(in oklab, var(--primary) 68%, var(--foreground));
 }
 
 /* ---------- Misc ---------- */
 
 .stat-value {
   font-size: clamp(1.5rem, 4vw, 2.1rem);
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.03em;
-  color: #0f172a;
+  color: var(--foreground);
   font-variant-numeric: tabular-nums;
 }
 
 .alert-error {
-  border-radius: var(--radius-ctl);
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  color: #9f1239;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--status-bad) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--status-bad) 34%, transparent);
+  color: var(--status-bad-text);
   padding: 0.7rem 0.9rem;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .alert-warn {
-  border-radius: var(--radius-ctl);
-  background: rgba(245, 158, 11, 0.16);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #92400e;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--status-warn) 14%, transparent);
+  border: 1px solid color-mix(in oklab, var(--status-warn) 36%, transparent);
+  color: var(--status-warn-text);
   padding: 0.7rem 0.9rem;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .alert-success {
-  border-radius: var(--radius-ctl);
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #065f46;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--status-ok) 13%, transparent);
+  border: 1px solid color-mix(in oklab, var(--status-ok) 32%, transparent);
+  color: var(--status-ok-text);
   padding: 0.7rem 0.9rem;
   font-size: 0.875rem;
   font-weight: 500;
+}
+
+/* Target sentuh minimal 48 px. */
+.tap {
+  min-height: 3rem;
+  min-width: 3rem;
+}
+
+/* Kamera scanner (html5-qrcode) memenuhi kotak bidik. */
+.scanner-view video,
+.scanner-view canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+/* Chip di atas gambar kamera — teks putih kontras. */
+.chip-overlay {
+  background: rgba(8, 13, 24, 0.62);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
 }
 
 /* QR dicetak dari SVG yang kita generate sendiri. */
@@ -359,4 +380,3 @@ textarea[aria-invalid="true"] {
     display: none !important;
   }
 }
-

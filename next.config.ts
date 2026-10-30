@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
     serverActions: {
-      // Foto absensi/patroli dikirim sebagai base64 lewat Server Action.
-      bodySizeLimit: "6mb",
+      // Aksi absensi/patroli menerima receipt foto Cloudinary ringkas.
+      bodySizeLimit: "1mb",
     },
   },
   cacheComponents: true,

@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * Terapkan tema sebelum paint pertama (pola Next.js
+ * "preventing-flash-before-hydration"): pilihan manual di localStorage
+ * menang, selain itu ikut `prefers-color-scheme`.
+ */
+const SKRIP_TEMA = `(function(){try{var t=localStorage.getItem("sp-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.toggle("dark",d);r.classList.toggle("light",!d);r.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
+
 export const metadata: Metadata = {
   title: {
     default: "SecurePatrol",
@@ -34,7 +41,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3f5f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1220" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -44,9 +54,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="id"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-dvh">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SKRIP_TEMA }} />
+      </head>
+      <body className="min-h-dvh bg-background text-foreground">
         {children}
         <ServiceWorkerRegister />
       </body>

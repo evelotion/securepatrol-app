@@ -9,6 +9,14 @@ const JAM = new Intl.DateTimeFormat("id-ID", {
   minute: "2-digit",
 });
 
+const JAM_DETIK = new Intl.DateTimeFormat("id-ID", {
+  timeZone: ZONA_WIB,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
 const TANGGAL = new Intl.DateTimeFormat("id-ID", {
   timeZone: ZONA_WIB,
   day: "numeric",
@@ -27,6 +35,11 @@ const LENGKAP = new Intl.DateTimeFormat("id-ID", {
 /** "14:03" */
 export function formatJam(value: string | Date): string {
   return JAM.format(typeof value === "string" ? new Date(value) : value);
+}
+
+/** "14:03:27" */
+export function formatJamDetik(value: string | Date): string {
+  return JAM_DETIK.format(typeof value === "string" ? new Date(value) : value);
 }
 
 /** "25 Okt 2026" */

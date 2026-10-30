@@ -6,6 +6,7 @@ export type FormState =
       errors?: Record<string, string>;
       /** Peringatan non-fatal, mis. GPS di luar radius checkpoint. */
       warning?: string;
+      data?: { fotoUrl?: string };
     }
   | undefined;
 

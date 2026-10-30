@@ -4,7 +4,15 @@ import type { NextRequest } from "next/server";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/master", "/absensi", "/patroli"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/master",
+  "/beranda",
+  "/absensi",
+  "/patroli",
+  "/insiden",
+  "/profil",
+];
 const AUTH_ROUTES = ["/login"];
 const SESSION_COOKIE = "sp_session";
 

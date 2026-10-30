@@ -2,6 +2,8 @@
 
 import { useFormStatus } from "react-dom";
 
+import { LogOut } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 import { logout } from "@/app/actions/auth";
@@ -18,7 +20,7 @@ export function LogoutButton() {
   };
 
   return (
-    <form action={logout} onSubmit={bersihkanCache}>
+    <form action={logout} onSubmit={bersihkanCache} className="mt-4">
       <LogoutSubmit />
     </form>
   );
@@ -31,12 +33,12 @@ function LogoutSubmit() {
     <Button
       type="submit"
       variant="outline"
-      size="sm"
       className="w-full justify-start"
       disabled={pending}
       title="Keluar dari sesi"
     >
-      {pending ? "…" : "Keluar"}
+      <LogOut className="size-4" aria-hidden="true" />
+      {pending ? "Keluar…" : "Keluar dari akun"}
     </Button>
   );
 }

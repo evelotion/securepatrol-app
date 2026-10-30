@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@/generated/prisma/client";
 import { requireRole } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
-import { formatJam, parseFoto, parseKoordinat } from "@/lib/bukti";
+import { formatJam, parseKoordinat } from "@/lib/bukti";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
 import { prisma } from "@/lib/prisma";
@@ -15,9 +15,8 @@ import { batasAbsensiTerbuka, startOfHariWIB } from "@/lib/waktu";
 /**
  * Blok 4 — Absensi Kehadiran.
  *
- * Check-in / check-out berisi foto selfie (base64) + koordinat Geolocation API.
- * Foto disimpan langsung ke kolom teks; AuditLog hanya mencatat bahwa foto
- * tersimpan (tanpa isi base64 agar tabel audit tidak membengkak).
+ * Check-in / check-out berisi selfie Cloudinary private + koordinat Geolocation API.
+ * AuditLog hanya mencatat metadata foto, tidak pernah isi foto.
  */
 
 /** Baris absensi ringkas — kolom foto sengaja tidak diambil (F1-9). */
@@ -65,8 +64,12 @@ export async function checkIn(
 ): Promise<FormState> {
   const actor = await requireRole(FIELD_ROLES);
 
-  const foto = parseFoto(str(formData.get("foto")));
-  if (!foto.ok) return { errors: { foto: foto.error } };
+  const fotoKey = str(formData.get("foto"));
+  const foto = await prisma.foto.findFirst({
+    where: { key: fotoKey, userId: actor.id },
+    select: { key: true, id: true },
+  });
+  if (!foto) return { errors: { foto: "Foto tidak valid atau bukan milik Anda." } };
 
   const koordinat = parseKoordinat(
     str(formData.get("lat")),
@@ -102,7 +105,7 @@ export async function checkIn(
       data: {
         userId: actor.id,
         waktuMasuk: now,
-        fotoMasuk: foto.value,
+        fotoMasuk: foto.key,
         latMasuk: lat,
         longMasuk: long,
       },
@@ -128,7 +131,7 @@ export async function checkIn(
       waktuMasuk: now.toISOString(),
       lat: lat,
       long: long,
-      foto: "base64",
+      fotoKey: foto.key,
     },
   });
 
@@ -137,6 +140,7 @@ export async function checkIn(
 
   return {
     ok: true,
+    data: { fotoUrl: `/api/foto/${foto.id}` },
     message: `Absen masuk tercatat pukul ${formatJam(now)}.`,
     ...(lat === null
       ? { warning: "Lokasi GPS tidak terkirim — kehadiran tanpa koordinat." }
@@ -151,8 +155,12 @@ export async function checkOut(
 ): Promise<FormState> {
   const actor = await requireRole(FIELD_ROLES);
 
-  const foto = parseFoto(str(formData.get("foto")));
-  if (!foto.ok) return { errors: { foto: foto.error } };
+  const fotoKey = str(formData.get("foto"));
+  const foto = await prisma.foto.findFirst({
+    where: { key: fotoKey, userId: actor.id },
+    select: { key: true, id: true },
+  });
+  if (!foto) return { errors: { foto: "Foto tidak valid atau bukan milik Anda." } };
 
   const koordinat = parseKoordinat(
     str(formData.get("lat")),
@@ -181,7 +189,7 @@ export async function checkOut(
     where: { id: existing.id },
     data: {
       waktuKeluar: now,
-      fotoKeluar: foto.value,
+      fotoKeluar: foto.key,
       latKeluar: lat,
       longKeluar: long,
     },
@@ -196,7 +204,7 @@ export async function checkOut(
       waktuKeluar: now.toISOString(),
       lat: lat,
       long: long,
-      foto: "base64",
+      fotoKey: foto.key,
     },
   });
 
@@ -205,6 +213,7 @@ export async function checkOut(
 
   return {
     ok: true,
+    data: { fotoUrl: `/api/foto/${foto.id}` },
     message: `Absen keluar tercatat pukul ${formatJam(now)}.`,
     ...(lat === null
       ? { warning: "Lokasi GPS tidak terkirim — pulang tanpa koordinat." }
