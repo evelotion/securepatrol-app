@@ -1,7 +1,16 @@
+/**
+ * Migrasi satu kali: pindahkan foto base64 lama (Absensi, PatroliLog) ke
+ * Cloudinary private, lalu ganti kolomnya dengan public ID.
+ * Jalankan: npm run photos:migrate-cloudinary
+ *
+ * Sengaja memakai `pg` langsung (bukan Prisma Client) karena client Prisma v7
+ * yang di-generate berupa TypeScript dan tidak bisa diimpor `node` tanpa
+ * transpiler — sama seperti prisma/seed.mjs.
+ */
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import { v2 as cloudinary } from "cloudinary";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client";
+import { Client } from "pg";
 
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.CLOUDINARY_API_KEY;
@@ -16,9 +25,15 @@ if (!cloudName || !apiKey || !apiSecret || !databaseUrl) {
 }
 
 cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+const client = new Client({ connectionString: databaseUrl });
 
 const DATA_URL = /^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=]+)$/;
+
+const COLUMNS = {
+  "Absensi.fotoMasuk": { table: "Absensi", column: "foto_masuk" },
+  "Absensi.fotoKeluar": { table: "Absensi", column: "foto_keluar" },
+  "PatroliLog.foto": { table: "PatroliLog", column: "foto" },
+};
 
 async function uploadPhoto(dataUrl, publicId) {
   return cloudinary.uploader.upload(dataUrl, {
@@ -27,117 +42,110 @@ async function uploadPhoto(dataUrl, publicId) {
     overwrite: true,
     resource_type: "image",
     format: "jpg",
-    transformation: "c_limit,w_1280,h_1280,q_auto:good,f_jpg",
   });
 }
 
-async function migrateField({ table, rowId, userId, field, dataUrl }) {
+async function migrateField({ label, rowId, userId, dataUrl }) {
+  const target = COLUMNS[label];
+  if (!target) throw new Error(`Kolom foto tidak dikenal: ${label}`);
+
   const match = DATA_URL.exec(dataUrl);
   if (!match) {
-    console.warn(`Lewati ${table}.${rowId}.${field}: data URL tidak valid.`);
-    return;
+    console.warn(`Lewati ${label}.${rowId}: data URL tidak valid.`);
+    return false;
   }
 
-  // Stable ID + overwrite makes retries safe if network/DB failed after upload.
-  const publicId = `securepatrol/${userId}/legacy/${table}-${rowId}-${field}`;
+  // ID stabil + overwrite membuat ulang aman bila jaringan/DB gagal setelah upload.
+  const publicId = `securepatrol/${userId}/legacy/${label.replace(".", "-")}-${rowId}`;
   const uploaded = await uploadPhoto(dataUrl, publicId);
 
-  await prisma.$transaction(async (tx) => {
-    await tx.foto.upsert({
-      where: { key: uploaded.public_id },
-      create: {
-        key: uploaded.public_id,
-        mime: "image/jpeg",
-        ukuran: uploaded.bytes,
-        userId,
-      },
-      update: {
-        mime: "image/jpeg",
-        ukuran: uploaded.bytes,
-        userId,
-      },
-    });
+  await client.query("BEGIN");
+  try {
+    await client.query(
+      `INSERT INTO "Foto" ("id","key","mime","ukuran","user_id")
+       VALUES ($1,$2,'image/jpeg',$3,$4)
+       ON CONFLICT ("key") DO UPDATE SET "mime" = EXCLUDED."mime", "ukuran" = EXCLUDED."ukuran", "user_id" = EXCLUDED."user_id"`,
+      [randomUUID(), uploaded.public_id, uploaded.bytes, userId],
+    );
 
-    if (table === "Absensi" && field === "fotoMasuk") {
-      await tx.absensi.update({ where: { id: rowId }, data: { fotoMasuk: uploaded.public_id } });
-    } else if (table === "Absensi" && field === "fotoKeluar") {
-      await tx.absensi.update({ where: { id: rowId }, data: { fotoKeluar: uploaded.public_id } });
-    } else if (table === "PatroliLog" && field === "foto") {
-      await tx.patroliLog.update({ where: { id: rowId }, data: { foto: uploaded.public_id } });
-    } else {
-      throw new Error(`Kolom foto tidak dikenal: ${table}.${field}`);
-    }
+    await client.query(`UPDATE "${target.table}" SET "${target.column}" = $1 WHERE "id" = $2`, [
+      uploaded.public_id,
+      rowId,
+    ]);
 
-    await tx.auditLog.create({
-      data: {
+    await client.query(
+      `INSERT INTO "AuditLog" ("id","user_id","aksi","tabel","data_baru")
+       VALUES ($1,$2,'MIGRASI_FOTO_CLOUDINARY',$3,$4)`,
+      [
+        randomUUID(),
         userId,
-        aksi: "MIGRASI_FOTO_CLOUDINARY",
-        tabel: table,
-        dataBaru: {
+        target.table,
+        JSON.stringify({
           id: rowId,
-          kolom: field,
+          kolom: target.column,
           key: uploaded.public_id,
           mime: "image/jpeg",
           ukuran: uploaded.bytes,
-        },
-      },
-    });
-  });
+        }),
+      ],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  }
 
-  console.log(`Migrasi ${table}.${rowId}.${field} -> ${uploaded.public_id}`);
+  console.log(`Migrasi ${label}.${rowId} -> ${uploaded.public_id}`);
+  return true;
 }
 
 async function run() {
   let migrated = 0;
-  const absensi = await prisma.absensi.findMany({
-    where: {
-      OR: [
-        { fotoMasuk: { startsWith: "data:image/" } },
-        { fotoKeluar: { startsWith: "data:image/" } },
-      ],
-    },
-    select: { id: true, userId: true, fotoMasuk: true, fotoKeluar: true },
-    orderBy: { id: "asc" },
-  });
 
-  for (const row of absensi) {
-    for (const [field, dataUrl] of [
-      ["fotoMasuk", row.fotoMasuk],
-      ["fotoKeluar", row.fotoKeluar],
+  const absensi = await client.query(
+    `SELECT "id","user_id","foto_masuk","foto_keluar" FROM "Absensi"
+     WHERE "foto_masuk" LIKE 'data:image/%' OR "foto_keluar" LIKE 'data:image/%'
+     ORDER BY "id"`,
+  );
+
+  for (const row of absensi.rows) {
+    for (const [label, dataUrl] of [
+      ["Absensi.fotoMasuk", row.foto_masuk],
+      ["Absensi.fotoKeluar", row.foto_keluar],
     ]) {
       if (dataUrl && DATA_URL.test(dataUrl)) {
-        await migrateField({ table: "Absensi", rowId: row.id, userId: row.userId, field, dataUrl });
-        migrated += 1;
+        if (await migrateField({ label, rowId: row.id, userId: row.user_id, dataUrl })) {
+          migrated += 1;
+        }
       }
     }
   }
 
-  const patroli = await prisma.patroliLog.findMany({
-    where: { foto: { startsWith: "data:image/" } },
-    select: { id: true, userId: true, foto: true },
-    orderBy: { id: "asc" },
-  });
-  for (const row of patroli) {
+  const patroli = await client.query(
+    `SELECT "id","user_id","foto" FROM "PatroliLog" WHERE "foto" LIKE 'data:image/%' ORDER BY "id"`,
+  );
+
+  for (const row of patroli.rows) {
     if (row.foto && DATA_URL.test(row.foto)) {
-      await migrateField({
-        table: "PatroliLog",
+      const ok = await migrateField({
+        label: "PatroliLog.foto",
         rowId: row.id,
-        userId: row.userId,
-        field: "foto",
+        userId: row.user_id,
         dataUrl: row.foto,
       });
-      migrated += 1;
+      if (ok) migrated += 1;
     }
   }
 
   console.log(`Selesai: ${migrated} foto dipindahkan.`);
 }
 
+await client.connect();
 try {
   await run();
 } catch (error) {
   console.error("Migrasi foto gagal; aman dijalankan ulang:", error);
   process.exitCode = 1;
 } finally {
-  await prisma.$disconnect();
+  await client.end();
 }

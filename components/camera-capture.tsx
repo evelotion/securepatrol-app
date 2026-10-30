@@ -148,10 +148,8 @@ export function CameraCapture({
       uploadForm.append("file", blob, "evidence.jpg");
       uploadForm.append("api_key", authorization.apiKey);
       uploadForm.append("timestamp", String(authorization.timestamp));
-      uploadForm.append("folder", authorization.publicId.slice(0, authorization.publicId.lastIndexOf("/")));
       uploadForm.append("public_id", authorization.publicId);
       uploadForm.append("type", "private");
-      uploadForm.append("transformation", "c_limit,w_1280,h_1280,q_auto:good,f_jpg");
       uploadForm.append("signature", authorization.signature);
 
       const response = await fetch(

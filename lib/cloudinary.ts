@@ -45,14 +45,16 @@ export function signFotoUpload(
 ): CloudinaryUploadAuthorization {
   const settings = getCloudinarySettings();
   const timestamp = Math.floor(Date.now() / 1000);
-  const folder = `${FOTO_FOLDER}/${userId}`;
-  const publicId = `${folder}/${assetId}`;
+  // public_id sudah memuat folder; mengirim `folder` terpisah membuat
+  // Cloudinary menempelkannya lagi (securepatrol/<uid>/securepatrol/<uid>/…).
+  const publicId = `${FOTO_FOLDER}/${userId}/${assetId}`;
+  // Foto sudah dikompres ke JPEG 1280 px di client; incoming transformation
+  // tidak dipakai karena Cloudinary membaca nilai string-nya sebagai nama
+  // transformation dan menolak upload.
   const params = {
     timestamp,
-    folder,
     public_id: publicId,
     type: "private",
-    transformation: "c_limit,w_1280,h_1280,q_auto:good,f_jpg",
   };
   const signature = cloudinary.utils.api_sign_request(params, settings.apiSecret);
 
