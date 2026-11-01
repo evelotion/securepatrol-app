@@ -3,9 +3,11 @@ import "server-only";
 import QRCode from "qrcode";
 
 import { getCurrentUser, requireRole, type SessionUser } from "@/lib/auth";
-import { startOfHari } from "@/lib/bukti";
+import { isCloudinaryKeyForUser } from "@/lib/cloudinary";
+import { isLegacyFoto } from "@/lib/foto";
 import { prisma } from "@/lib/prisma";
 import { DASHBOARD_ROLES, FIELD_ROLES, MASTER_ROLES } from "@/lib/roles";
+import { batasAbsensiTerbuka, startOfHariWIB } from "@/lib/waktu";
 import type {
   AbsensiHariIni,
   AbsensiRow,
@@ -24,8 +26,8 @@ export type { CheckpointRow, DashboardStats, UserRow };
 /* ------------------------------------------------------------------ */
 
 /**
- * Absensi hari ini milik staf yang login (termasuk foto base64 miliknya).
- * Hanya untuk halaman /absensi — foto tidak pernah dikirim ke orang lain.
+ * Absensi hari ini milik staf yang login. Foto private hanya ditampilkan ke pemilik.
+ * URL bertanda tangan Cloudinary berlaku selama sepuluh menit.
  */
 export async function getAbsensiSaya(): Promise<{
   actor: SessionUser;
@@ -34,11 +36,24 @@ export async function getAbsensiSaya(): Promise<{
   const actor = await requireRole(FIELD_ROLES);
 
   const row = await prisma.absensi.findFirst({
-    where: { userId: actor.id, waktuMasuk: { gte: startOfHari() } },
+    where: {
+      userId: actor.id,
+      // Absensi terbuka dalam 16 jam terakhir tetap tampil setelah tengah malam,
+      // supaya tombol Absen Keluar tetap aktif untuk shift malam (F1-1).
+      OR: [
+        { waktuKeluar: null, waktuMasuk: { gte: batasAbsensiTerbuka() } },
+        { waktuMasuk: { gte: startOfHariWIB() } },
+      ],
+    },
     orderBy: { waktuMasuk: "desc" },
   });
 
   if (!row) return { actor, absensi: null };
+
+  const [fotoMasukUrl, fotoKeluarUrl] = await Promise.all([
+    resolveFotoUrl(row.fotoMasuk, actor.id),
+    resolveFotoUrl(row.fotoKeluar, actor.id),
+  ]);
 
   return {
     actor,
@@ -52,8 +67,22 @@ export async function getAbsensiSaya(): Promise<{
       longKeluar: row.longKeluar?.toString() ?? null,
       fotoMasuk: row.fotoMasuk,
       fotoKeluar: row.fotoKeluar,
+      fotoMasukUrl,
+      fotoKeluarUrl,
     },
   };
+}
+
+async function resolveFotoUrl(key: string | null, userId: string): Promise<string | null> {
+  if (!key) return null;
+  if (isLegacyFoto(key)) return key;
+  if (!isCloudinaryKeyForUser(key, userId)) return null;
+  const foto = await prisma.foto.findUnique({
+    where: { key },
+    select: { id: true, userId: true },
+  });
+  if (!foto || foto.userId !== userId) return null;
+  return `/api/foto/${foto.id}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -63,7 +92,10 @@ export async function getAbsensiSaya(): Promise<{
 type LogRow = {
   id: string;
   waktu: Date;
-  statusValid: boolean;
+  status: "VALID" | "TIDAK_VALID" | "BELUM_TERVERIFIKASI";
+  alasan: string | null;
+  jarakM: number | null;
+  akurasiM: number | null;
   user: { nama: string };
   checkpoint: { id: string; namaTitik: string };
 };
@@ -94,8 +126,13 @@ function buildProgress(
       dikunjungi: visits.length > 0,
       kunjunganTerakhir: last ? last.waktu.toISOString() : null,
       pengunjung: last ? last.user.nama : null,
-      jumlahValid: visits.filter((v) => v.statusValid).length,
-      jumlahInvalid: visits.filter((v) => !v.statusValid).length,
+      jumlahValid: visits.filter((v) => v.status === "VALID").length,
+      jumlahTidakValid: visits.filter((v) => v.status === "TIDAK_VALID").length,
+      jumlahBelumTerverifikasi: visits.filter(
+        (v) => v.status === "BELUM_TERVERIFIKASI",
+      ).length,
+      statusTerakhir: last?.status ?? null,
+      alasanTerakhir: last?.alasan ?? null,
     };
   });
 }
@@ -106,7 +143,10 @@ function toLogRow(log: LogRow): PatroliLogRow {
     waktu: log.waktu.toISOString(),
     namaUser: log.user.nama,
     namaCheckpoint: log.checkpoint.namaTitik,
-    statusValid: log.statusValid,
+    status: log.status,
+    alasan: log.alasan,
+    jarakM: log.jarakM,
+    akurasiM: log.akurasiM,
   };
 }
 
@@ -121,7 +161,7 @@ export async function getPatroliSaya(): Promise<{
   };
 }> {
   const actor = await requireRole(FIELD_ROLES);
-  const hariIni = startOfHari();
+  const hariIni = startOfHariWIB();
 
   const [checkpoints, logs] = await Promise.all([
     prisma.checkpoint.findMany({
@@ -134,7 +174,10 @@ export async function getPatroliSaya(): Promise<{
       select: {
         id: true,
         waktu: true,
-        statusValid: true,
+        status: true,
+        alasan: true,
+        jarakM: true,
+        akurasiM: true,
         user: { select: { nama: true } },
         checkpoint: { select: { id: true, namaTitik: true } },
       },
@@ -169,7 +212,7 @@ export async function getDashboardHariIni(): Promise<{
   const actor = await getCurrentUser();
   const scope = DASHBOARD_ROLES.includes(actor.role) ? "tim" : "pribadi";
   const hanyaMilikSaya = scope === "pribadi" ? actor.id : undefined;
-  const hariIni = startOfHari();
+  const hariIni = startOfHariWIB();
 
   const [absensiRows, checkpoints, logRows, stats] = await Promise.all([
     prisma.absensi.findMany({
@@ -198,7 +241,10 @@ export async function getDashboardHariIni(): Promise<{
       select: {
         id: true,
         waktu: true,
-        statusValid: true,
+        status: true,
+        alasan: true,
+        jarakM: true,
+        akurasiM: true,
         user: { select: { nama: true } },
         checkpoint: { select: { id: true, namaTitik: true } },
       },
@@ -219,7 +265,13 @@ export async function getDashboardHariIni(): Promise<{
 
   const progress = buildProgress(checkpoints, logRows);
   const totalTerpatroli = progress.filter((cp) => cp.dikunjungi).length;
-  const logValid = logRows.filter((log) => log.statusValid).length;
+  const logValid = logRows.filter((log) => log.status === "VALID").length;
+  const logTidakValid = logRows.filter(
+    (log) => log.status === "TIDAK_VALID",
+  ).length;
+  const logBelumTerverifikasi = logRows.filter(
+    (log) => log.status === "BELUM_TERVERIFIKASI",
+  ).length;
 
   return {
     actor,
@@ -234,7 +286,8 @@ export async function getDashboardHariIni(): Promise<{
         checkpointTerpatroli: totalTerpatroli,
         logHariIni: logRows.length,
         logValid,
-        logInvalid: logRows.length - logValid,
+        logInvalid: logTidakValid,
+        logBelumTerverifikasi,
       },
       absensi,
       checkpoints: progress,

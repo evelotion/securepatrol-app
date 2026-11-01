@@ -33,6 +33,16 @@ export async function readSessionToken(): Promise<string | null> {
   return cookieStore.get(SESSION_COOKIE)?.value ?? null;
 }
 
+/**
+ * Hapus SEMUA sesi milik satu user (F1-7).
+ * Dipakai saat password diganti atau akun dinonaktifkan,
+ * supaya perangkat lain langsung ter-logout.
+ */
+export async function destroyAllSessions(userId: string): Promise<number> {
+  const result = await prisma.session.deleteMany({ where: { userId } });
+  return result.count;
+}
+
 /** Hapus sesi dari DB + hapus cookie. Kembalikan userId sesi yang dihapus. */
 export async function destroySession(): Promise<string | null> {
   const cookieStore = await cookies();

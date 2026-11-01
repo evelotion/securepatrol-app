@@ -9,6 +9,18 @@ import { str } from "@/lib/form";
 import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { MASTER_ROLES, ROLES } from "@/lib/roles";
+import { destroyAllSessions } from "@/lib/session";
+
+/** Hitung SUPER_ADMIN selain `kecualiId` yang masih aktif. */
+async function jumlahSuperAdminLain(kecualiId?: string): Promise<number> {
+  return prisma.user.count({
+    where: {
+      role: "SUPER_ADMIN",
+      aktif: true,
+      ...(kecualiId ? { id: { not: kecualiId } } : {}),
+    },
+  });
+}
 
 function validate(input: {
   nama: string;
@@ -122,6 +134,21 @@ export async function updateUser(
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return { errors: { id: "User tidak ditemukan." } };
 
+  // F1-6 — super admin tidak boleh menurunkan role dirinya sendiri.
+  if (target.id === actor.id && target.role !== role) {
+    return { errors: { role: "Anda tidak bisa mengubah role sendiri." } };
+  }
+
+  // F1-6 — perubahan tidak boleh menghapus SUPER_ADMIN aktif terakhir.
+  if (target.role === "SUPER_ADMIN" && role !== "SUPER_ADMIN") {
+    const sisaSuperAdmin = await jumlahSuperAdminLain(target.id);
+    if (sisaSuperAdmin === 0) {
+      return {
+        errors: { role: "Tidak bisa menurunkan Super Admin terakhir." },
+      };
+    }
+  }
+
   const or: { email?: string; username?: string }[] = [{ email }];
   if (username) or.push({ username });
   const duplicate = await prisma.user.findFirst({
@@ -156,6 +183,11 @@ export async function updateUser(
     },
   });
 
+  // F1-7 — password diganti: sesi di perangkat lain langsung ter-logout.
+  if (password) {
+    await destroyAllSessions(updated.id);
+  }
+
   await writeAudit({
     userId: actor.id,
     aksi: "UPDATE_USER",
@@ -187,10 +219,21 @@ export async function toggleUserAktif(formData: FormData): Promise<void> {
   // Tidak boleh menonaktifkan akun sendiri.
   if (target.id === actor.id && target.aktif) return;
 
+  // F1-6 — super admin terakhir tidak boleh dinonaktifkan.
+  if (target.role === "SUPER_ADMIN" && target.aktif) {
+    const sisaSuperAdmin = await jumlahSuperAdminLain(target.id);
+    if (sisaSuperAdmin === 0) return;
+  }
+
   const updated = await prisma.user.update({
     where: { id },
     data: { aktif: !target.aktif },
   });
+
+  // F1-7 — nonaktif: paksa logout semua perangkat.
+  if (!updated.aktif) {
+    await destroyAllSessions(updated.id);
+  }
 
   await writeAudit({
     userId: actor.id,

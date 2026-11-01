@@ -13,11 +13,12 @@ export default function MasterCheckpointsPage() {
     <Suspense
       fallback={
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-7 w-52" />
-            <Skeleton className="h-4 w-80" />
-          </div>
-          <Skeleton className="h-72 rounded-xl" />
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-7 w-52" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <Skeleton className="h-72 rounded-[var(--radius)]" />
         </div>
       }
     >
@@ -30,11 +31,12 @@ async function CheckpointsSection() {
   const checkpoints = await listCheckpoints();
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Master Checkpoint</h1>
-          <p className="page-sub mt-1">
+          <p className="eyebrow">Master data</p>
+          <h1 className="page-title mt-1">Master Checkpoint</h1>
+          <p className="page-sub mt-0.5">
             Titik patroli beserta kode barcode untuk dicetak & ditempel di
             gedung.
           </p>

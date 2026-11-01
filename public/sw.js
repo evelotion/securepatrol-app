@@ -1,28 +1,46 @@
-/* SecurePatrol service worker — cache shell statis & fallback offline. */
-const STATIC_CACHE = "securepatrol-static-v1";
-const PAGE_CACHE = "securepatrol-pages-v1";
-const CACHE_LISTS = [STATIC_CACHE, PAGE_CACHE];
+/* SecurePatrol service worker — cache shell statis & fallback offline.
+
+   F1-2: halaman login-only (dashboard, absensi + selfie base64) TIDAK boleh
+   masuk cache. Yang disimpan hanya /offline + aset build /_next/static.
+   Versi cache dinaikkan ke v2 supaya cache v1 lama dibersihkan saat activate. */
+const CACHE_VERSION = "v2";
+const STATIC_CACHE = `securepatrol-static-${CACHE_VERSION}`;
+const KEEP_CACHES = [STATIC_CACHE];
+const SHELL = ["/offline", "/icons/icon-192.png"];
+
+function hapusCacheLama() {
+  return caches
+    .keys()
+    .then((keys) =>
+      Promise.all(
+        keys.filter((k) => !KEEP_CACHES.includes(k)).map((k) => caches.delete(k)),
+      ),
+    );
+}
+
+function isiShell(cache) {
+  return cache.addAll(SHELL);
+}
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(["/offline", "/icons/icon-192.png"]))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(caches.open(STATIC_CACHE).then(isiShell).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys.filter((k) => !CACHE_LISTS.includes(k)).map((k) => caches.delete(k)),
-        ),
-      )
-      .then(() => self.clients.claim()),
-  );
+  event.waitUntil(hapusCacheLama().then(() => self.clients.claim()));
+});
+
+/* Logout: client kirim {type:"CLEAR"} -> hapus SEMUA cache (termasuk aset),
+   lalu isi ulang shell /offline supaya mode pesawat tetap punya halaman offline. */
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CLEAR") {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => caches.open(STATIC_CACHE).then(isiShell)),
+    );
+  }
 });
 
 self.addEventListener("fetch", (event) => {
@@ -46,23 +64,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigasi halaman: network-first, fallback ke cache lalu halaman offline.
+  // Navigasi: network-first, TIDAK pernah disimpan ke cache (bisa berisi data
+  // user). Gagal jaringan -> hanya halaman /offline dari shell statis.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          if (res.ok) {
-            const copy = res.clone();
-            caches.open(PAGE_CACHE).then((cache) => cache.put(request, copy));
-          }
-          return res;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          if (cached) return cached;
-          const offline = await caches.match("/offline");
-          return offline ?? Response.error();
-        }),
+      fetch(request).catch(async () => {
+        const offline = await caches.match("/offline");
+        return offline ?? Response.error();
+      }),
     );
   }
 });
