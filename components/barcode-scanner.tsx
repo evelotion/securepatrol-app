@@ -215,11 +215,17 @@ export function BarcodeScanner({
       {error ? <p className="field-error">{error}</p> : null}
 
       {live ? (
-        <Button variant="outline" onClick={() => void stop()} disabled={busy}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void stop()}
+          disabled={busy}
+        >
           Berhenti Memindai
         </Button>
       ) : (
         <Button
+          type="button"
           size="lg"
           className="w-full"
           onClick={() => void start()}

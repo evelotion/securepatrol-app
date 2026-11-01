@@ -206,7 +206,13 @@ export function CameraCapture({
             {label} tersimpan
           </span>
         </div>
-        <Button variant="outline" onClick={retake} disabled={busy} className="w-full">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={retake}
+          disabled={busy}
+          className="w-full"
+        >
           <RotateCcw className="size-4" aria-hidden="true" />
           Foto Ulang
         </Button>
@@ -283,10 +289,15 @@ export function CameraCapture({
 
         {hero ? null : (
           <div className="flex gap-2">
-            <Button onClick={() => void capture()} disabled={busy}>
+            <Button
+              type="button"
+              onClick={() => void capture()}
+              disabled={busy}
+            >
               {busy ? "Mengunggah…" : `Ambil ${label}`}
             </Button>
             <Button
+              type="button"
               variant="outline"
               onClick={() => {
                 stopStream();
@@ -313,6 +324,7 @@ export function CameraCapture({
           {hint ?? "Ambil foto sebagai bukti kehadiran."}
         </p>
         <Button
+          type="button"
           onClick={() => void start()}
           disabled={busy}
           size={hero ? "lg" : "default"}
