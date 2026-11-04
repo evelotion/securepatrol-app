@@ -8,9 +8,10 @@ import { writeAudit } from "@/lib/audit";
 import { formatJam, parseKoordinat } from "@/lib/bukti";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
+import { jadwalBerlaku, type JadwalBertanggal } from "@/lib/kehadiran";
 import { prisma } from "@/lib/prisma";
 import { FIELD_ROLES } from "@/lib/roles";
-import { statusKeluar, statusMasuk, tanggalDB } from "@/lib/shift";
+import { statusKeluar, statusMasuk, tambahHari, tanggalDB } from "@/lib/shift";
 import { batasAbsensiTerbuka, startOfHariWIB, tanggalWIB } from "@/lib/waktu";
 
 /**
@@ -37,15 +38,36 @@ const SELECT_RINGKAS = {
   statusHadir: true,
 } as const;
 
-/** Jadwal shift aktif milik user pada tanggal WIB tertentu (F4-2). */
-async function jadwalHariItu(userId: string, tanggal: string) {
+/** Jadwal shift aktif milik user pada satu tanggal WIB (F4-2). */
+async function jadwalPadaTanggal(
+  userId: string,
+  tanggal: string,
+): Promise<JadwalBertanggal | null> {
   const jadwal = await prisma.jadwal.findUnique({
     where: { userId_tanggal: { userId, tanggal: tanggalDB(tanggal) } },
     include: { shift: true },
   });
 
   if (!jadwal?.aktif || !jadwal.shift.aktif) return null;
-  return jadwal.shift;
+  return { tanggal, shift: jadwal.shift };
+}
+
+/**
+ * Jadwal hari ini DAN kemarin (WIB) untuk absen masuk (F4-2).
+ * Shift malam 22:00 → 06:00 dimulai kemarin, jadi pada absen masuk pukul
+ * 00:30 jadwalnya hanya ada di tanggal kemarin.
+ */
+async function jadwalHariIniDanKemarin(
+  userId: string,
+  sekarang: Date,
+): Promise<JadwalBertanggal[]> {
+  const hariIni = tanggalWIB(sekarang);
+  const kandidat = await Promise.all([
+    jadwalPadaTanggal(userId, hariIni),
+    jadwalPadaTanggal(userId, tambahHari(hariIni, -1)),
+  ]);
+
+  return kandidat.filter((row): row is JadwalBertanggal => row !== null);
 }
 
 /**
@@ -115,10 +137,16 @@ export async function checkIn(
   }
 
   const now = new Date();
-  const tanggal = tanggalWIB(now);
-  // F4-2 — status kehadiran dihitung terhadap jadwal shift hari itu.
-  const shift = await jadwalHariItu(actor.id, tanggal);
-  const statusHadir = shift ? statusMasuk(now, shift, tanggal) : null;
+  // F4-2 — jadwal hari ini ATAU kemarin: shift malam yang dimulai kemarin
+  // tetap terpilih saat absen masuk lewat tengah malam, dan status TELAT
+  // dihitung dari jadwal itu.
+  const jadwal = jadwalBerlaku(
+    now,
+    await jadwalHariIniDanKemarin(actor.id, now),
+  );
+  const statusHadir = jadwal
+    ? statusMasuk(now, jadwal.shift, jadwal.tanggal)
+    : null;
 
   let created: { id: string };
   try {
@@ -129,7 +157,7 @@ export async function checkIn(
         fotoMasuk: foto.key,
         latMasuk: lat,
         longMasuk: long,
-        shiftId: shift?.id ?? null,
+        shiftId: jadwal?.shift.id ?? null,
         statusHadir,
       },
       select: { id: true },
@@ -155,7 +183,7 @@ export async function checkIn(
       lat: lat,
       long: long,
       fotoKey: foto.key,
-      shiftId: shift?.id ?? null,
+      shiftId: jadwal?.shift.id ?? null,
       statusHadir,
     },
   });
@@ -166,7 +194,7 @@ export async function checkIn(
 
   const peringatanMasuk = [
     statusHadir === "TELAT"
-      ? `Tercatat TELAT dari jadwal ${shift?.nama ?? ""}.`
+      ? `Tercatat TELAT dari jadwal ${jadwal?.shift.nama ?? ""}.`
       : null,
     lat === null ? "Lokasi GPS tidak terkirim — kehadiran tanpa koordinat." : null,
   ]
