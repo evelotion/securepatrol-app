@@ -18,6 +18,14 @@ enum StatusScan {
   BELUM_TERVERIFIKASI
 }
 
+/// Status kehadiran terhadap jadwal shift (F4-2).
+enum StatusHadir {
+  TEPAT_WAKTU
+  TELAT
+  PULANG_CEPAT
+  TIDAK_HADIR
+}
+
 /// Role pengguna sesuai PRD bagian 2.
 enum Role {
   SUPER_ADMIN
@@ -46,6 +54,7 @@ model User {
   patroliLogs PatroliLog[]
   auditLogs   AuditLog[]
   fotos       Foto[]
+  jadwal      Jadwal[]
 
   @@map("User")
 }
@@ -66,6 +75,7 @@ model Checkpoint {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   patroliLogs PatroliLog[]
+  ruteTitik   RuteTitik[]
 
   @@map("Checkpoint")
 }
@@ -82,8 +92,12 @@ model Absensi {
   longMasuk  Decimal?  @db.Decimal(10, 7) @map("long_masuk")
   latKeluar  Decimal?  @db.Decimal(10, 7) @map("lat_keluar")
   longKeluar Decimal?  @db.Decimal(10, 7) @map("long_keluar")
+  /// Jadwal shift yang berlaku saat absen (F4-2), diisi dari Jadwal hari itu.
+  shiftId     String?      @map("shift_id")
+  statusHadir StatusHadir? @map("status_hadir")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shift Shift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
 
   @@index([userId, waktuMasuk])
   @@map("Absensi")
@@ -155,6 +169,78 @@ model Foto {
 
   @@index([userId, dibuatPada])
   @@map("Foto")
+}
+
+/// Shift jaga (F4-2). Jam disimpan sebagai "HH:MM" WIB agar tidak bergantung
+/// pada zona waktu server; shift malam melewati tengah malam bila jamSelesai <= jamMulai.
+model Shift {
+  id                  String   @id @default(cuid())
+  nama                String   @unique
+  jamMulai            String   @map("jam_mulai")
+  jamSelesai          String   @map("jam_selesai")
+  toleransiTelatMenit Int      @default(15) @map("toleransi_telat_menit")
+  aktif               Boolean  @default(true)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  jadwal  Jadwal[]
+  absensi Absensi[]
+  rute    Rute[]
+
+  @@map("Shift")
+}
+
+/// Jadwal jaga: satu shift per user per tanggal (F4-2).
+/// `tanggal` disimpan sebagai DATE — kirim/tampilkan lewat helper WIB di lib/shift.ts.
+model Jadwal {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  shiftId   String   @map("shift_id")
+  tanggal   DateTime @db.Date
+  /// Soft delete: false = jadwal dibatalkan/dikosongkan.
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tanggal])
+  @@index([tanggal, shiftId])
+  @@map("Jadwal")
+}
+
+/// Rute patroli + target putaran per shift (F4-3).
+model Rute {
+  id            String   @id @default(cuid())
+  nama          String   @unique
+  /// Null = rute cadangan untuk semua shift.
+  shiftId       String?  @map("shift_id")
+  targetPutaran Int      @default(1) @map("target_putaran")
+  intervalMenit Int      @default(120) @map("interval_menit")
+  aktif         Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  shift Shift?      @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  titik RuteTitik[]
+
+  @@index([shiftId])
+  @@map("Rute")
+}
+
+/// Urutan titik dalam satu rute.
+model RuteTitik {
+  id           String @id @default(cuid())
+  ruteId       String @map("rute_id")
+  checkpointId String @map("checkpoint_id")
+  urutan       Int
+
+  rute       Rute       @relation(fields: [ruteId], references: [id], onDelete: Cascade)
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@unique([ruteId, checkpointId])
+  @@unique([ruteId, urutan])
+  @@map("RuteTitik")
 }
 
 /// Sesi login — token acak disimpan di cookie httpOnly.

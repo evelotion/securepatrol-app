@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { getJadwalSaya } from "@/lib/data-jadwal";
 import { getAbsensiSaya, getPatroliSaya } from "@/lib/data";
 import { formatJam, formatTanggal } from "@/lib/format";
 import { jamWIB } from "@/lib/waktu";
@@ -43,9 +44,10 @@ function BerandaSkeleton() {
 }
 
 async function Beranda() {
-  const [{ actor, absensi }, { data }] = await Promise.all([
+  const [{ actor, absensi }, { data }, { jadwal }] = await Promise.all([
     getAbsensiSaya(),
     getPatroliSaya(),
+    getJadwalSaya(),
   ]);
 
   const total = data.checkpoints.length;
@@ -113,6 +115,32 @@ async function Beranda() {
           className="mono-num mt-5 block text-5xl font-semibold tracking-tight text-foreground"
         />
         <p className="mt-1 text-xs text-muted-foreground">Waktu Indonesia Barat</p>
+      </Card>
+
+      {/* Jadwal jaga hari ini (F4-2) */}
+      <Card className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="eyebrow">Jadwal hari ini</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {jadwal
+                ? `${jadwal.shiftNama} · ${jadwal.jamMulai}–${jadwal.jamSelesai}`
+                : "Belum ada jadwal shift hari ini"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {jadwal
+                ? "Kehadiran dinilai terhadap jam shift ini."
+                : "Hubungi Danru bila seharusnya Anda bertugas."}
+            </p>
+          </div>
+          <span
+            className={`badge shrink-0 ${
+              jadwal ? "badge-indigo" : "badge-slate"
+            }`}
+          >
+            {jadwal ? "Terjadwal" : "Belum dijadwalkan"}
+          </span>
+        </div>
       </Card>
 
       {/* Tombol aksi utama — berubah mengikuti konteks shift */}

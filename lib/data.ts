@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 
 import { getCurrentUser, requireRole, type SessionUser } from "@/lib/auth";
 import { isCloudinaryKeyForUser } from "@/lib/cloudinary";
+import { getCheckpointTerlewatHariIni, getRuteHariIni } from "@/lib/data-jadwal";
 import { isLegacyFoto } from "@/lib/foto";
 import { prisma } from "@/lib/prisma";
 import { DASHBOARD_ROLES, FIELD_ROLES, MASTER_ROLES } from "@/lib/roles";
@@ -16,6 +17,7 @@ import type {
   DashboardHariIni,
   DashboardStats,
   PatroliLogRow,
+  RuteHariIni,
   UserRow,
 } from "@/lib/types";
 
@@ -111,6 +113,7 @@ function buildProgress(
     aktif: boolean;
   }[],
   logs: LogRow[],
+  terlewat: Set<string> = new Set(),
 ): CheckpointProgress[] {
   return checkpoints.map((cp) => {
     const visits = logs.filter((log) => log.checkpoint.id === cp.id);
@@ -133,6 +136,7 @@ function buildProgress(
       ).length,
       statusTerakhir: last?.status ?? null,
       alasanTerakhir: last?.alasan ?? null,
+      terlewat: terlewat.has(cp.id),
     };
   });
 }
@@ -158,12 +162,13 @@ export async function getPatroliSaya(): Promise<{
   data: {
     checkpoints: CheckpointProgress[];
     logs: PatroliLogRow[];
+    rute: RuteHariIni | null;
   };
 }> {
   const actor = await requireRole(FIELD_ROLES);
   const hariIni = startOfHariWIB();
 
-  const [checkpoints, logs] = await Promise.all([
+  const [checkpoints, logs, rute] = await Promise.all([
     prisma.checkpoint.findMany({
       where: { aktif: true },
       orderBy: { namaTitik: "asc" },
@@ -182,13 +187,22 @@ export async function getPatroliSaya(): Promise<{
         checkpoint: { select: { id: true, namaTitik: true } },
       },
     }),
+    getRuteHariIni(actor.id),
   ]);
+
+  const terlewat = new Set(
+    (rute?.putaran ?? [])
+      .flatMap((p) => p.titik)
+      .filter((t) => t.status === "TERLEWAT")
+      .map((t) => t.checkpointId),
+  );
 
   return {
     actor,
     data: {
-      checkpoints: buildProgress(checkpoints, logs),
+      checkpoints: buildProgress(checkpoints, logs, terlewat),
       logs: logs.map(toLogRow),
+      rute,
     },
   };
 }
@@ -212,9 +226,11 @@ export async function getDashboardHariIni(): Promise<{
   const actor = await getCurrentUser();
   const scope = DASHBOARD_ROLES.includes(actor.role) ? "tim" : "pribadi";
   const hanyaMilikSaya = scope === "pribadi" ? actor.id : undefined;
-  const hariIni = startOfHariWIB();
+  const now = new Date();
+  const hariIni = startOfHariWIB(now);
 
-  const [absensiRows, checkpoints, logRows, stats] = await Promise.all([
+  const [absensiRows, checkpoints, logRows, stats, terlewat] =
+    await Promise.all([
     prisma.absensi.findMany({
       where: {
         waktuMasuk: { gte: hariIni },
@@ -252,6 +268,9 @@ export async function getDashboardHariIni(): Promise<{
     scope === "tim" && actor.role === "SUPER_ADMIN"
       ? getDashboardStats()
       : Promise.resolve(null),
+    scope === "tim"
+      ? getCheckpointTerlewatHariIni(now)
+      : Promise.resolve(new Set<string>()),
   ]);
 
   const absensi: AbsensiRow[] = absensiRows.map((row) => ({
@@ -263,7 +282,7 @@ export async function getDashboardHariIni(): Promise<{
     waktuKeluar: row.waktuKeluar?.toISOString() ?? null,
   }));
 
-  const progress = buildProgress(checkpoints, logRows);
+  const progress = buildProgress(checkpoints, logRows, terlewat);
   const totalTerpatroli = progress.filter((cp) => cp.dikunjungi).length;
   const logValid = logRows.filter((log) => log.status === "VALID").length;
   const logTidakValid = logRows.filter(

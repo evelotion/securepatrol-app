@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import type { FormState } from "@/lib/form";
 import { formatJam } from "@/lib/format";
 import { haversineMeters } from "@/lib/geo";
-import type { CheckpointProgress, PatroliLogRow } from "@/lib/types";
+import type { CheckpointProgress, PatroliLogRow, RuteHariIni } from "@/lib/types";
 import { useGeolocation, type Posisi } from "@/lib/use-geolocation";
 
 /**
@@ -25,10 +25,12 @@ import { useGeolocation, type Posisi } from "@/lib/use-geolocation";
 export function PatroliClient({
   checkpoints,
   logs,
+  rute,
   actorName,
 }: {
   checkpoints: CheckpointProgress[];
   logs: PatroliLogRow[];
+  rute: RuteHariIni | null;
   actorName: string;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
@@ -209,6 +211,69 @@ export function PatroliClient({
         </div>
       </Card>
 
+      {/* F4-3 — target putaran rute untuk shift hari ini */}
+      {rute ? (
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="section-title truncate">Rute: {rute.nama}</h2>
+              <p className="text-xs text-muted-foreground">
+                {rute.shiftNama} · {rute.jamMulai}–{rute.jamSelesai} ·{" "}
+                {rute.putaran.length} putaran
+              </p>
+            </div>
+            <span className="badge badge-indigo shrink-0">
+              {rute.putaran.filter((p) => p.status === "SELESAI").length}/
+              {rute.putaran.length} putaran
+            </span>
+          </div>
+
+          <ol className="mt-3 flex flex-col gap-2">
+            {rute.putaran.map((p) => (
+              <li
+                key={p.putaran}
+                className={`rounded-[var(--radius-sm)] border px-3 py-2 ${
+                  p.status === "BERJALAN"
+                    ? "border-primary/40 bg-primary/5"
+                    : "border-border"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    Putaran {p.putaran}{" "}
+                    <span className="mono-num text-xs font-normal text-muted-foreground">
+                      {formatJam(p.mulai)}–{formatJam(p.selesai)}
+                    </span>
+                  </p>
+                  <span
+                    className={`badge shrink-0 ${
+                      p.status === "SELESAI"
+                        ? p.terlewat > 0
+                          ? "badge-red"
+                          : "badge-green"
+                        : p.status === "BERJALAN"
+                          ? "badge-indigo"
+                          : "badge-slate"
+                    }`}
+                  >
+                    {p.status === "SELESAI"
+                      ? p.terlewat > 0
+                        ? `${p.terlewat} terlewat`
+                        : "Selesai"
+                      : p.status === "BERJALAN"
+                        ? "Berjalan"
+                        : "Belum"}
+                  </span>
+                </div>
+                <p className="mono-num mt-0.5 text-xs text-muted-foreground">
+                  {p.dikunjungi}/{p.total} titik
+                </p>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      ) : null}
+
       <Card className="p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-title">Rute Hari Ini</h2>
@@ -257,7 +322,12 @@ export function PatroliClient({
                     </p>
                   ) : null}
                 </div>
-                <StatusScanBadge status={cp.statusTerakhir} />
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <StatusScanBadge status={cp.statusTerakhir} />
+                  {cp.terlewat ? (
+                    <span className="badge badge-red">Terlewat</span>
+                  ) : null}
+                </div>
               </li>
             ))
           )}

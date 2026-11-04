@@ -17,6 +17,13 @@ export const MASTER_ROLES: Role[] = ["SUPER_ADMIN"];
  */
 export const FIELD_ROLES: Role[] = ["SECURITY"];
 
+/** Role yang boleh mengatur jadwal jaga (F4-2): Danru regunya sendiri, Chief & Admin semua regu. */
+export const JADWAL_ROLES: Role[] = [
+  "DANRU",
+  "CHIEF_SECURITY",
+  "SUPER_ADMIN",
+];
+
 /** Role yang memantau dashboard (Blok 6) — PRD bagian 7. */
 export const DASHBOARD_ROLES: Role[] = [
   "DANRU",

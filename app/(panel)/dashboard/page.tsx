@@ -177,7 +177,9 @@ async function Dashboard() {
           ) : (
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
               {checkpoints.map((cp) => {
-                const { tone } = labelStatusScan(cp.statusTerakhir);
+                // F4-3 — titik yang jendela putarannya lewat tampil merah.
+                const { tone: toneStatus } = labelStatusScan(cp.statusTerakhir);
+                const tone: Tone = cp.terlewat ? "bad" : toneStatus;
                 const alasan = cp.alasanTerakhir;
                 return (
                   <li
@@ -198,6 +200,9 @@ async function Dashboard() {
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <StatusScanBadge status={cp.statusTerakhir} />
+                      {cp.terlewat ? (
+                        <span className="badge badge-red">Terlewat</span>
+                      ) : null}
                       {cp.jumlahTidakValid > 0 ? (
                         <span className="text-xs font-medium text-[var(--status-bad-text)]">
                           {cp.jumlahTidakValid} tidak valid

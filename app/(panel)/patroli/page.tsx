@@ -60,6 +60,7 @@ async function PatroliSection() {
       <PatroliClient
         checkpoints={data.checkpoints}
         logs={data.logs}
+        rute={data.rute}
         actorName={actor.nama}
       />
     </div>
