@@ -46,7 +46,8 @@ export type NavIcon =
   | "checkpoints"
   | "jadwal"
   | "shift"
-  | "rute";
+  | "rute"
+  | "insiden";
 
 export type NavItem = {
   href: string;
@@ -69,6 +70,7 @@ const IKON_NAV: Record<NavIcon, typeof LayoutDashboard> = {
   jadwal: CalendarDays,
   shift: Clock4,
   rute: Route,
+  insiden: TriangleAlert,
 };
 
 function isCurrentPage(pathname: string, href: string) {

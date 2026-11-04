@@ -59,6 +59,7 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
   const items: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   ];
+  items.push({ href: "/insiden", label: "Insiden", icon: "insiden" });
   if (JADWAL_ROLES.includes(user.role)) {
     items.push({ href: "/jadwal", label: "Jadwal Jaga", icon: "jadwal" });
   }

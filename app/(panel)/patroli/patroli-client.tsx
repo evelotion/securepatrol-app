@@ -2,7 +2,9 @@
 
 import { useActionState, useState } from "react";
 
-import { CheckCircle2, MapPin, ScanLine } from "lucide-react";
+import Link from "next/link";
+
+import { CheckCircle2, MapPin, ScanLine, TriangleAlert } from "lucide-react";
 
 import { catatPatroli } from "@/app/actions/patroli";
 import { BarcodeScanner } from "@/components/barcode-scanner";
@@ -42,12 +44,19 @@ export function PatroliClient({
   const [foto, setFoto] = useState<string | null>(null);
   const gps = useGeolocation();
 
-  // Setelah kunjungan tercatat, bersihkan input untuk scan berikutnya.
+  const titik = kode
+    ? checkpoints.find((cp) => cp.kodeBarcode === kode) ?? null
+    : null;
+
+  // Setelah kunjungan tercatat, bersihkan input untuk scan berikutnya dan
+  // ingat titiknya untuk tautan "Laporkan insiden" (F4-4).
   // Pola "simpan state render sebelumnya" (react.dev You Might Not Need an Effect).
   const [prevState, setPrevState] = useState<FormState>(undefined);
+  const [titikTerakhir, setTitikTerakhir] = useState<string | null>(null);
   if (state !== prevState) {
     setPrevState(state);
     if (state?.ok) {
+      setTitikTerakhir(titik?.id ?? null);
       setKode("");
       setFoto(null);
     }
@@ -55,10 +64,6 @@ export function PatroliClient({
 
   const koordinat = gps.posisi
     ? `${gps.posisi.lat.toFixed(6)}, ${gps.posisi.long.toFixed(6)}`
-    : null;
-
-  const titik = kode
-    ? checkpoints.find((cp) => cp.kodeBarcode === kode) ?? null
     : null;
   const jarak =
     titik && titik.lat && titik.long && gps.posisi
@@ -92,6 +97,15 @@ export function PatroliClient({
             <p role="status" className="alert-success">
               {state.message}
             </p>
+          ) : null}
+          {state?.ok && titikTerakhir ? (
+            <Link
+              href={`/insiden?titik=${encodeURIComponent(titikTerakhir)}`}
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline"
+            >
+              <TriangleAlert className="size-4" aria-hidden="true" />
+              Laporkan insiden di titik ini
+            </Link>
           ) : null}
           {state?.errors
             ? Object.values(state.errors).map((pesan) => (

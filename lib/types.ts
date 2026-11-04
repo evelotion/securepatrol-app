@@ -211,3 +211,23 @@ export type DashboardHariIni = {
   /** Log patroli terbaru hari ini (hanya untuk manager). */
   logs: PatroliLogRow[];
 };
+
+/** Insiden untuk ditampilkan — Decimal sudah string, foto lewat id /api/foto/[id]. */
+export type InsidenRow = {
+  id: string;
+  kategori: import("@/lib/insiden").KategoriInsiden;
+  prioritas: import("@/lib/insiden").PrioritasInsiden;
+  deskripsi: string;
+  fotoIds: string[];
+  lat: string | null;
+  long: string | null;
+  akurasiM: number | null;
+  status: import("@/lib/insiden").StatusInsiden;
+  namaPelapor: string;
+  reguPelapor: string | null;
+  namaTitik: string | null;
+  namaPenangan: string | null;
+  ditanganiPada: string | null;
+  catatanTindakLanjut: string | null;
+  dibuatPada: string;
+};

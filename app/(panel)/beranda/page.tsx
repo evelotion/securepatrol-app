@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { JamBerjalan } from "@/components/jam-berjalan";
+import { PanicButton } from "@/components/panic-button";
 import { StatusScanBadge } from "@/components/status-scan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -180,6 +181,11 @@ async function Beranda() {
           </Link>
         </Button>
       ) : null}
+
+      {/* Tombol darurat (F4-5) — tahan 2 detik */}
+      <Card className="p-4">
+        <PanicButton />
+      </Card>
 
       {/* Progres patroli + ring */}
       <Card className="p-5">

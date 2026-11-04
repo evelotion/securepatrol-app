@@ -2,19 +2,32 @@ import { Suspense } from "react";
 
 import Link from "next/link";
 
-import { ArrowLeft, TriangleAlert } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { AutoRefresh } from "@/components/auto-refresh";
+import { InsidenKartu } from "@/components/insiden-kartu";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { requireRole } from "@/lib/auth";
-import { FIELD_ROLES } from "@/lib/roles";
+import { getCurrentUser } from "@/lib/auth";
+import { getInsidenSaya, getInsidenTim } from "@/lib/data-insiden";
+import {
+  isStatus,
+  STATUS_INSIDEN,
+  STATUS_LABEL,
+  type StatusInsiden,
+} from "@/lib/insiden";
+import { isManager } from "@/lib/roles";
+
+import { InsidenForm } from "./insiden-form";
 
 export const metadata = { title: "Insiden" };
 
-/** Placeholder tab — fitur laporan insiden dikerjakan di PR F4-4. */
-export default function InsidenPage() {
+type SearchParams = Promise<{ titik?: string; status?: string }>;
+
+export default function InsidenPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   return (
     <Suspense
       fallback={
@@ -24,38 +37,137 @@ export default function InsidenPage() {
         </div>
       }
     >
-      <InsidenSection />
+      <InsidenSection searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function InsidenSection() {
-  await requireRole(FIELD_ROLES);
+async function InsidenSection({ searchParams }: { searchParams: SearchParams }) {
+  const [actor, params] = await Promise.all([getCurrentUser(), searchParams]);
+
+  if (isManager(actor.role)) {
+    const filter: StatusInsiden | undefined =
+      params.status && isStatus(params.status) ? params.status : undefined;
+    return <DaftarManager filter={filter} />;
+  }
+
+  return <HalamanStaf titikAwal={params.titik ?? ""} />;
+}
+
+async function HalamanStaf({ titikAwal }: { titikAwal: string }) {
+  const { actor, insiden, checkpoints } = await getInsidenSaya();
 
   return (
     <div className="flex flex-col gap-4">
       <header>
-        <p className="eyebrow">Segera hadir</p>
+        <p className="eyebrow">Laporan lapangan</p>
         <h1 className="page-title mt-1">Insiden</h1>
+        <p className="page-sub mt-0.5">
+          Laporkan kerusakan, tamu mencurigakan, asap, atau kehilangan.
+        </p>
       </header>
 
-      <Card className="p-5">
-        <span className="flex size-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--status-warn)_16%,transparent)] text-[var(--status-warn-text)]">
-          <TriangleAlert className="size-6" aria-hidden="true" />
-        </span>
-        <h2 className="section-title mt-4">Pelaporan insiden belum aktif</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Foto, kategori, prioritas, dan tindak lanjut insiden akan tersedia
-          pada rilis berikutnya. Sementara itu, laporkan kejadian lewat Danru
-          atau radio regu.
-        </p>
-        <Button asChild variant="outline" className="mt-5 w-full">
-          <Link href="/beranda">
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Kembali ke Beranda
-          </Link>
-        </Button>
+      <Card className="p-4">
+        <InsidenForm
+          checkpoints={checkpoints}
+          titikAwal={titikAwal}
+          actorName={actor.nama}
+        />
       </Card>
+
+      <section aria-label="Laporan saya" className="flex flex-col gap-3">
+        <h2 className="section-title">Laporan saya</h2>
+        {insiden.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Belum ada laporan insiden.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {insiden.map((item) => (
+              <InsidenKartu
+                key={item.id}
+                item={item}
+                bolehKelola={false}
+                tampilPelapor={false}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
+  );
+}
+
+async function DaftarManager({ filter }: { filter: StatusInsiden | undefined }) {
+  const { actor, insiden } = await getInsidenTim(filter);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Daftar insiden ikut segar tiap 15 detik, sama seperti dashboard. */}
+      <AutoRefresh intervalMs={15_000} />
+
+      <header>
+        <p className="eyebrow">
+          {actor.role === "DANRU" && actor.regu ? actor.regu : "Semua regu"}
+        </p>
+        <h1 className="page-title mt-1">Insiden</h1>
+        <p className="page-sub mt-0.5">
+          Pantau laporan dan tindak lanjutnya.
+        </p>
+      </header>
+
+      <nav aria-label="Filter status" className="flex flex-wrap gap-2">
+        <FilterLink href="/insiden" aktif={!filter} label="Semua" />
+        {STATUS_INSIDEN.map((s) => (
+          <FilterLink
+            key={s}
+            href={`/insiden?status=${s}`}
+            aktif={filter === s}
+            label={STATUS_LABEL[s]}
+          />
+        ))}
+      </nav>
+
+      {insiden.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Tidak ada insiden untuk filter ini.
+        </p>
+      ) : (
+        <ul className="grid gap-3 lg:grid-cols-2">
+          {insiden.map((item) => (
+            <InsidenKartu
+              key={item.id}
+              item={item}
+              bolehKelola
+              tampilPelapor
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function FilterLink({
+  href,
+  aktif,
+  label,
+}: {
+  href: string;
+  aktif: boolean;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={aktif ? "page" : undefined}
+      className={`tap inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold ${
+        aktif
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card text-foreground"
+      }`}
+    >
+      {label}
+    </Link>
   );
 }

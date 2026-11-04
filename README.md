@@ -65,3 +65,11 @@ Cron harian menandai jadwal tanpa absensi sebagai `TIDAK_HADIR`:
 
 - Endpoint `GET /api/cron/tidak-hadir`, jadwal `vercel.json` pukul 17:10 UTC (00:10 WIB).
 - Wajib set env `CRON_SECRET` di Vercel (Preview & Production). Panggilan manual juga harus mengirim header `Authorization: Bearer <CRON_SECRET>`; tanpa env tersebut endpoint menolak semua permintaan.
+
+## Insiden dan tombol darurat (F4-4 / F4-5)
+
+- `Insiden` menyimpan kategori, prioritas, deskripsi, foto (key Cloudinary private), lokasi, titik terkait, dan status `BARU` → `DITANGANI` → `SELESAI`. Setiap perubahan tercatat di `AuditLog`.
+- SECURITY melapor lewat tab **Insiden** (atau tautan "Laporkan insiden di titik ini" setelah scan). Danru hanya melihat insiden regunya; Chief dan Super Admin semua regu.
+- Tombol darurat di `/beranda` harus ditahan 2 detik. Hasilnya insiden `DARURAT`; sinyal berulang dari orang yang sama dalam 5 menit tidak digandakan.
+- Dashboard manager menampilkan banner merah untuk darurat yang belum ditangani dan menyegarkan diri tiap 15 detik, sampai ada yang menekan **Saya tangani**. Web Push belum ada.
+- Foto insiden dibuka lewat `/api/foto/[id]`: pemilik, atau manager yang pelapornya ada dalam cakupannya.

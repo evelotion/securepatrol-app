@@ -13,6 +13,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { AutoRefresh } from "@/components/auto-refresh";
+import { DaruratBanner } from "@/components/darurat-banner";
 import { StatusScanBadge } from "@/components/status-scan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +29,7 @@ import {
 } from "@/components/ui/table";
 
 import { getDashboardHariIni } from "@/lib/data";
+import { getDaruratAktif } from "@/lib/data-insiden";
 import { formatJam, formatTanggal } from "@/lib/format";
 import { isManager } from "@/lib/roles";
 import { startOfHariWIB } from "@/lib/waktu";
@@ -81,6 +84,7 @@ async function Dashboard() {
   if (!isManager(actor.role)) redirect("/beranda");
 
   const { summary, absensi, checkpoints, logs } = data;
+  const darurat = await getDaruratAktif(actor);
   const persen = persenProgres(
     summary.checkpointTerpatroli,
     summary.totalCheckpointAktif,
@@ -120,6 +124,10 @@ async function Dashboard() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Polling ringan 15 dtk supaya sinyal darurat cepat muncul (F4-5). */}
+      <AutoRefresh intervalMs={15_000} />
+      <DaruratBanner daftar={darurat} />
+
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="eyebrow">{formatTanggal(hariIni)} · WIB</p>
