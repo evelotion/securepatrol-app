@@ -12,6 +12,8 @@ const PROTECTED_PREFIXES = [
   "/patroli",
   "/insiden",
   "/profil",
+  "/detail",
+  "/laporan",
 ];
 const AUTH_ROUTES = ["/login"];
 const SESSION_COOKIE = "sp_session";

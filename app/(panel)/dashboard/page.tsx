@@ -254,9 +254,12 @@ async function Dashboard() {
                     aria-hidden="true"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">
+                    <Link
+                      href={`/detail/patroli/${log.id}`}
+                      className="block truncate text-sm font-semibold text-primary hover:underline"
+                    >
                       {log.namaCheckpoint}
-                    </p>
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {log.namaUser} · {formatJam(log.waktu)}
                       {log.jarakM !== null ? ` · ${log.jarakM} m` : ""}
@@ -304,9 +307,12 @@ async function Dashboard() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
+                      <Link
+                        href={`/detail/absensi/${row.id}`}
+                        className="block truncate text-sm font-semibold text-primary hover:underline"
+                      >
                         {row.nama}
-                      </p>
+                      </Link>
                       <p className="text-xs text-muted-foreground">
                         {row.regu ?? "—"}
                       </p>
@@ -344,7 +350,14 @@ async function Dashboard() {
                 <TableBody>
                   {absensi.map((row) => (
                     <TableRow key={row.userId}>
-                      <TableCell className="font-medium">{row.nama}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/detail/absensi/${row.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {row.nama}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {row.regu ?? "—"}
                       </TableCell>

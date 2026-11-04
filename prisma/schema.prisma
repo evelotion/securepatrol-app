@@ -46,6 +46,8 @@ model User {
   regu      String?
   /// Soft delete: true = aktif, false = dinonaktifkan (tidak pernah hapus permanen).
   aktif     Boolean  @default(true)
+  /// true = wajib ganti password saat login berikutnya (user baru buatan admin / reset admin).
+  harusGantiPassword Boolean @default(false) @map("harus_ganti_password")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

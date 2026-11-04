@@ -8,6 +8,7 @@ import { getCheckpointTerlewatHariIni, getRuteHariIni } from "@/lib/data-jadwal"
 import { isLegacyFoto } from "@/lib/foto";
 import { prisma } from "@/lib/prisma";
 import { DASHBOARD_ROLES, FIELD_ROLES, MASTER_ROLES } from "@/lib/roles";
+import { whereUserDalamScope } from "@/lib/scope";
 import { batasAbsensiTerbuka, startOfHariWIB } from "@/lib/waktu";
 import type {
   AbsensiHariIni,
@@ -225,7 +226,8 @@ export async function getDashboardHariIni(): Promise<{
 }> {
   const actor = await getCurrentUser();
   const scope = DASHBOARD_ROLES.includes(actor.role) ? "tim" : "pribadi";
-  const hanyaMilikSaya = scope === "pribadi" ? actor.id : undefined;
+  // F4-6 — cakupan data: Danru = regunya, Chief/Admin = semua, Security = dirinya.
+  const cakupanUser = whereUserDalamScope(actor);
   const now = new Date();
   const hariIni = startOfHariWIB(now);
 
@@ -234,10 +236,11 @@ export async function getDashboardHariIni(): Promise<{
     prisma.absensi.findMany({
       where: {
         waktuMasuk: { gte: hariIni },
-        ...(hanyaMilikSaya ? { userId: hanyaMilikSaya } : {}),
+        user: cakupanUser,
       },
       orderBy: { waktuMasuk: "desc" },
       select: {
+        id: true,
         userId: true,
         waktuMasuk: true,
         waktuKeluar: true,
@@ -251,7 +254,7 @@ export async function getDashboardHariIni(): Promise<{
     prisma.patroliLog.findMany({
       where: {
         waktu: { gte: hariIni },
-        ...(hanyaMilikSaya ? { userId: hanyaMilikSaya } : {}),
+        user: cakupanUser,
       },
       orderBy: { waktu: "desc" },
       select: {
@@ -274,6 +277,7 @@ export async function getDashboardHariIni(): Promise<{
   ]);
 
   const absensi: AbsensiRow[] = absensiRows.map((row) => ({
+    id: row.id,
     userId: row.userId,
     nama: row.user.nama,
     regu: row.user.regu,
