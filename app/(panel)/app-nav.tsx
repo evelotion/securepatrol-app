@@ -6,10 +6,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
+  CalendarDays,
   ClipboardList,
+  Clock4,
   House,
   LayoutDashboard,
   MapPin,
+  Route,
   ScanLine,
   ShieldCheck,
   TriangleAlert,
@@ -40,7 +43,10 @@ export type NavIcon =
   | "absensi"
   | "patroli"
   | "users"
-  | "checkpoints";
+  | "checkpoints"
+  | "jadwal"
+  | "shift"
+  | "rute";
 
 export type NavItem = {
   href: string;
@@ -60,6 +66,9 @@ const IKON_NAV: Record<NavIcon, typeof LayoutDashboard> = {
   patroli: MapPin,
   users: Users,
   checkpoints: ScanLine,
+  jadwal: CalendarDays,
+  shift: Clock4,
+  rute: Route,
 };
 
 function isCurrentPage(pathname: string, href: string) {

@@ -2,15 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, type StatusHadir } from "@/generated/prisma/client";
 import { requireRole } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
 import { formatJam, parseKoordinat } from "@/lib/bukti";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
+import { jadwalBerlaku, type JadwalBertanggal } from "@/lib/kehadiran";
 import { prisma } from "@/lib/prisma";
 import { FIELD_ROLES } from "@/lib/roles";
-import { batasAbsensiTerbuka, startOfHariWIB } from "@/lib/waktu";
+import { statusKeluar, statusMasuk, tambahHari, tanggalDB } from "@/lib/shift";
+import { batasAbsensiTerbuka, startOfHariWIB, tanggalWIB } from "@/lib/waktu";
 
 /**
  * Blok 4 — Absensi Kehadiran.
@@ -24,13 +26,49 @@ type AbsensiRingkas = {
   id: string;
   waktuMasuk: Date;
   waktuKeluar: Date | null;
+  shiftId: string | null;
+  statusHadir: StatusHadir | null;
 };
 
 const SELECT_RINGKAS = {
   id: true,
   waktuMasuk: true,
   waktuKeluar: true,
+  shiftId: true,
+  statusHadir: true,
 } as const;
+
+/** Jadwal shift aktif milik user pada satu tanggal WIB (F4-2). */
+async function jadwalPadaTanggal(
+  userId: string,
+  tanggal: string,
+): Promise<JadwalBertanggal | null> {
+  const jadwal = await prisma.jadwal.findUnique({
+    where: { userId_tanggal: { userId, tanggal: tanggalDB(tanggal) } },
+    include: { shift: true },
+  });
+
+  if (!jadwal?.aktif || !jadwal.shift.aktif) return null;
+  return { tanggal, shift: jadwal.shift };
+}
+
+/**
+ * Jadwal hari ini DAN kemarin (WIB) untuk absen masuk (F4-2).
+ * Shift malam 22:00 → 06:00 dimulai kemarin, jadi pada absen masuk pukul
+ * 00:30 jadwalnya hanya ada di tanggal kemarin.
+ */
+async function jadwalHariIniDanKemarin(
+  userId: string,
+  sekarang: Date,
+): Promise<JadwalBertanggal[]> {
+  const hariIni = tanggalWIB(sekarang);
+  const kandidat = await Promise.all([
+    jadwalPadaTanggal(userId, hariIni),
+    jadwalPadaTanggal(userId, tambahHari(hariIni, -1)),
+  ]);
+
+  return kandidat.filter((row): row is JadwalBertanggal => row !== null);
+}
 
 /**
  * Absensi terbuka (`waktuKeluar: null`) milik user dalam 16 jam terakhir.
@@ -99,6 +137,17 @@ export async function checkIn(
   }
 
   const now = new Date();
+  // F4-2 — jadwal hari ini ATAU kemarin: shift malam yang dimulai kemarin
+  // tetap terpilih saat absen masuk lewat tengah malam, dan status TELAT
+  // dihitung dari jadwal itu.
+  const jadwal = jadwalBerlaku(
+    now,
+    await jadwalHariIniDanKemarin(actor.id, now),
+  );
+  const statusHadir = jadwal
+    ? statusMasuk(now, jadwal.shift, jadwal.tanggal)
+    : null;
+
   let created: { id: string };
   try {
     created = await prisma.absensi.create({
@@ -108,6 +157,8 @@ export async function checkIn(
         fotoMasuk: foto.key,
         latMasuk: lat,
         longMasuk: long,
+        shiftId: jadwal?.shift.id ?? null,
+        statusHadir,
       },
       select: { id: true },
     });
@@ -132,19 +183,29 @@ export async function checkIn(
       lat: lat,
       long: long,
       fotoKey: foto.key,
+      shiftId: jadwal?.shift.id ?? null,
+      statusHadir,
     },
   });
 
   revalidatePath("/absensi");
   revalidatePath("/dashboard");
+  revalidatePath("/beranda");
+
+  const peringatanMasuk = [
+    statusHadir === "TELAT"
+      ? `Tercatat TELAT dari jadwal ${jadwal?.shift.nama ?? ""}.`
+      : null,
+    lat === null ? "Lokasi GPS tidak terkirim — kehadiran tanpa koordinat." : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return {
     ok: true,
     data: { fotoUrl: `/api/foto/${foto.id}` },
     message: `Absen masuk tercatat pukul ${formatJam(now)}.`,
-    ...(lat === null
-      ? { warning: "Lokasi GPS tidak terkirim — kehadiran tanpa koordinat." }
-      : {}),
+    ...(peringatanMasuk ? { warning: peringatanMasuk } : {}),
   };
 }
 
@@ -185,6 +246,19 @@ export async function checkOut(
   }
 
   const now = new Date();
+  // F4-2 — pulang sebelum jam selesai shift ditandai PULANG_CEPAT.
+  const shift = existing.shiftId
+    ? await prisma.shift.findUnique({ where: { id: existing.shiftId } })
+    : null;
+  const statusHadir = shift
+    ? statusKeluar(
+        existing.statusHadir,
+        now,
+        shift,
+        tanggalWIB(existing.waktuMasuk),
+      )
+    : existing.statusHadir;
+
   await prisma.absensi.update({
     where: { id: existing.id },
     data: {
@@ -192,6 +266,7 @@ export async function checkOut(
       fotoKeluar: foto.key,
       latKeluar: lat,
       longKeluar: long,
+      statusHadir,
     },
   });
 
@@ -205,18 +280,27 @@ export async function checkOut(
       lat: lat,
       long: long,
       fotoKey: foto.key,
+      statusHadir,
     },
   });
 
   revalidatePath("/absensi");
   revalidatePath("/dashboard");
+  revalidatePath("/beranda");
+
+  const peringatanKeluar = [
+    statusHadir === "PULANG_CEPAT"
+      ? "Tercatat PULANG_CEPAT: keluar sebelum jam selesai shift."
+      : null,
+    lat === null ? "Lokasi GPS tidak terkirim — pulang tanpa koordinat." : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return {
     ok: true,
     data: { fotoUrl: `/api/foto/${foto.id}` },
     message: `Absen keluar tercatat pukul ${formatJam(now)}.`,
-    ...(lat === null
-      ? { warning: "Lokasi GPS tidak terkirim — pulang tanpa koordinat." }
-      : {}),
+    ...(peringatanKeluar ? { warning: peringatanKeluar } : {}),
   };
 }

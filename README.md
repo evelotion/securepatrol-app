@@ -52,3 +52,16 @@ Aturan:
 - Seed (`npm run db:seed`) hanya membuat akun SUPER_ADMIN; jalankan hanya di branch `dev`, atau di Production saat inisialisasi pertama dengan `SEED_ADMIN_PASSWORD` yang kuat.
 - Data uji (absensi, patroli, foto) dijalankan di branch `dev`, supaya database Production bersih.
 - Foto disimpan di Cloudinary sebagai aset `private`; baris `Foto` hanya menyimpan metadata dan key, bukan isi gambar.
+
+## Shift, jadwal, dan rute (F4-2 / F4-3)
+
+- `Shift` menyimpan jam jaga dan toleransi telat; `Jadwal` menugaskan satu shift per personel per tanggal WIB.
+- `Absensi` menyimpan `shift_id` dan `status_hadir`: `TEPAT_WAKTU`, `TELAT`, `PULANG_CEPAT`, `TIDAK_HADIR`.
+- Danru hanya bisa mengatur jadwal anggota regunya sendiri; Chief Security dan Super Admin semua regu.
+- `Rute` + `RuteTitik` menentukan urutan titik dan target putaran per shift. Progres dihitung per putaran; titik yang jendela waktunya lewat tanpa scan ditandai `TERLEWAT` dan tampil merah di dashboard.
+- Halaman: `/jadwal` (Danru, Chief, Super Admin), `/master/shifts` dan `/master/rute` (Super Admin). Staf melihat jadwal hari ini di `/beranda` dan progres putaran di `/patroli`.
+
+Cron harian menandai jadwal tanpa absensi sebagai `TIDAK_HADIR`:
+
+- Endpoint `GET /api/cron/tidak-hadir`, jadwal `vercel.json` pukul 17:10 UTC (00:10 WIB).
+- Wajib set env `CRON_SECRET` di Vercel (Preview & Production). Panggilan manual juga harus mengirim header `Authorization: Bearer <CRON_SECRET>`; tanpa env tersebut endpoint menolak semua permintaan.

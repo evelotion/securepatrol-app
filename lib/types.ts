@@ -60,6 +60,96 @@ export type AbsensiRow = {
   waktuKeluar: string | null;
 };
 
+/** Shift jaga (F4-2). Jam disimpan sebagai "HH:MM" WIB. */
+export type ShiftRow = {
+  id: string;
+  nama: string;
+  jamMulai: string;
+  jamSelesai: string;
+  toleransiTelatMenit: number;
+  aktif: boolean;
+};
+
+/** Satu titik dalam rute, sudah urut. */
+export type RuteTitikRow = {
+  checkpointId: string;
+  namaTitik: string;
+  urutan: number;
+};
+
+/** Rute patroli + target putaran (F4-3). */
+export type RuteRow = {
+  id: string;
+  nama: string;
+  shiftId: string | null;
+  shiftNama: string | null;
+  targetPutaran: number;
+  intervalMenit: number;
+  aktif: boolean;
+  titik: RuteTitikRow[];
+};
+
+/** Satu sel jadwal pada kalender mingguan. */
+export type JadwalSel = {
+  userId: string;
+  tanggal: string;
+  shiftId: string;
+  shiftNama: string;
+};
+
+/** Data halaman /jadwal untuk satu pekan. */
+export type JadwalMingguan = {
+  pekan: string;
+  hari: string[];
+  shifts: ShiftRow[];
+  users: { id: string; nama: string; regu: string | null; role: Role }[];
+  jadwal: JadwalSel[];
+  bisaAtur: boolean;
+  /** Regu yang dibatasi untuk Danru; null = semua regu. */
+  reguScope: string | null;
+};
+
+/** Jadwal shift milik staf pada satu hari (beranda). */
+export type JadwalSaya = {
+  tanggal: string;
+  shiftId: string;
+  shiftNama: string;
+  jamMulai: string;
+  jamSelesai: string;
+};
+
+export type StatusPutaranDTO = "BELUM" | "BERJALAN" | "SELESAI";
+export type StatusTitikPutaranDTO = "DIKUNJUNGI" | "TERLEWAT" | "BELUM";
+
+export type TitikPutaranRow = {
+  checkpointId: string;
+  namaTitik: string;
+  urutan: number;
+  status: StatusTitikPutaranDTO;
+  waktu: string | null;
+};
+
+/** Progres satu putaran rute hari ini. */
+export type PutaranRow = {
+  putaran: number;
+  mulai: string;
+  selesai: string;
+  status: StatusPutaranDTO;
+  total: number;
+  dikunjungi: number;
+  terlewat: number;
+  titik: TitikPutaranRow[];
+};
+
+/** Rute yang berlaku hari ini untuk satu staf. */
+export type RuteHariIni = {
+  nama: string;
+  shiftNama: string;
+  jamMulai: string;
+  jamSelesai: string;
+  putaran: PutaranRow[];
+};
+
 /** Progres satu checkpoint hari ini. */
 export type CheckpointProgress = {
   id: string;
@@ -76,6 +166,8 @@ export type CheckpointProgress = {
   jumlahBelumTerverifikasi: number;
   statusTerakhir: StatusScan | null;
   alasanTerakhir: string | null;
+  /** Titik lewat jendela waktu rute tanpa dipindai (F4-3). */
+  terlewat: boolean;
 };
 
 /** Satu log patroli untuk ditampilkan (tanpa foto base64). */
@@ -94,6 +186,7 @@ export type PatroliLogRow = {
 export type PatroliHariIni = {
   checkpoints: CheckpointProgress[];
   logs: PatroliLogRow[];
+  rute: RuteHariIni | null;
 };
 
 export type MonitoringSummary = {

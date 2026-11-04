@@ -4,7 +4,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { getCurrentUser } from "@/lib/auth";
-import { ROLE_LABEL } from "@/lib/roles";
+import { JADWAL_ROLES, ROLE_LABEL } from "@/lib/roles";
 
 import {
   AppSidebar,
@@ -59,6 +59,9 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
   const items: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   ];
+  if (JADWAL_ROLES.includes(user.role)) {
+    items.push({ href: "/jadwal", label: "Jadwal Jaga", icon: "jadwal" });
+  }
   if (user.role === "SUPER_ADMIN") {
     items.push(
       { href: "/master/users", label: "Master User", icon: "users" },
@@ -67,6 +70,8 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
         label: "Master Checkpoint",
         icon: "checkpoints",
       },
+      { href: "/master/shifts", label: "Master Shift", icon: "shift" },
+      { href: "/master/rute", label: "Master Rute", icon: "rute" },
     );
   }
 
