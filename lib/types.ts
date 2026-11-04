@@ -52,6 +52,7 @@ export type AbsensiHariIni = {
 
 /** Baris absensi tim untuk dashboard — foto TIDAK ikut (hemat payload). */
 export type AbsensiRow = {
+  id: string;
   userId: string;
   nama: string;
   regu: string | null;

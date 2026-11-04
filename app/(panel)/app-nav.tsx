@@ -8,12 +8,14 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   ClipboardList,
+  FileBarChart,
   Clock4,
   House,
   LayoutDashboard,
   MapPin,
   Route,
   ScanLine,
+  ScrollText,
   ShieldCheck,
   TriangleAlert,
   UserRound,
@@ -47,7 +49,10 @@ export type NavIcon =
   | "jadwal"
   | "shift"
   | "rute"
-  | "insiden";
+  | "insiden"
+  | "laporan"
+  | "audit"
+  | "profil";
 
 export type NavItem = {
   href: string;
@@ -71,6 +76,9 @@ const IKON_NAV: Record<NavIcon, typeof LayoutDashboard> = {
   shift: Clock4,
   rute: Route,
   insiden: TriangleAlert,
+  laporan: FileBarChart,
+  audit: ScrollText,
+  profil: UserRound,
 };
 
 function isCurrentPage(pathname: string, href: string) {

@@ -73,3 +73,31 @@ Cron harian menandai jadwal tanpa absensi sebagai `TIDAK_HADIR`:
 - Tombol darurat di `/beranda` harus ditahan 2 detik. Hasilnya insiden `DARURAT`; sinyal berulang dari orang yang sama dalam 5 menit tidak digandakan.
 - Dashboard manager menampilkan banner merah untuk darurat yang belum ditangani dan menyegarkan diri tiap 15 detik, sampai ada yang menekan **Saya tangani**. Web Push belum ada.
 - Foto insiden dibuka lewat `/api/foto/[id]`: pemilik, atau manager yang pelapornya ada dalam cakupannya.
+
+## Pemantauan, laporan, dan akun (F4-6 / F4-7 / F4-8)
+
+- **Cakupan data**: Danru hanya melihat anggota regunya; Chief dan Super Admin semua regu (`lib/scope.ts`). Dicek di server pada dashboard, insiden, laporan, detail bukti, dan foto, bukan hanya di UI. Id yang ditebak dari regu lain mengembalikan 404.
+- **Detail bukti**: nama personel dan titik di dashboard membuka `/detail/absensi/[id]` dan `/detail/patroli/[id]` (foto, jarak, akurasi, alasan status, diagram posisi HP terhadap titik). Dashboard menyegarkan diri tiap 15 detik.
+- **Laporan** (`/laporan`): filter rentang tanggal (maks 93 hari, WIB), regu, dan personel. Rekap kehadiran (hadir, telat, pulang cepat, tidak hadir) dan patroli (scan, tidak valid, persentase titik aktif yang dipindai). `Export Excel` memanggil `GET /api/laporan/excel` dengan filter yang sama, dengan cakupan role yang sama. PDF belum ada.
+- **Akun** (`/profil`): ganti password (wajib password lama, maksimal 5 kali salah per 15 menit), daftar sesi aktif, keluar dari semua perangkat. Ganti password mengeluarkan perangkat lain.
+- **Wajib ganti password**: user yang dibuat admin, atau yang password-nya direset admin, ditandai `harusGantiPassword` dan hanya bisa membuka `/profil` sampai password diganti.
+- **Audit log** (`/master/audit`, Super Admin): filter aksi, tabel, user, tanggal; setiap entri menampilkan beda `dataLama` dan `dataBaru`.
+
+## Setup lokal
+
+```bash
+npm install
+cp .env.example .env      # isi DATABASE_URL (Neon branch dev) dan kredensial Cloudinary
+npx prisma migrate dev    # hanya terhadap branch dev
+npm run db:seed           # membuat SUPER_ADMIN dari SEED_ADMIN_*
+npm run dev
+```
+
+Perintah lain: `npm run test`, `npm run typecheck`, `npm run lint`, `npm run build`. Variabel env lengkap ada di `.env.example`.
+
+## Deploy
+
+1. Push ke GitHub; Vercel membangun branch `main` sebagai Production dan branch lain sebagai Preview.
+2. Set env di Vercel (Production: Neon branch `main`; Preview: Neon branch `dev`), termasuk `CRON_SECRET`.
+3. Setelah PR di-merge, jalankan `npx prisma migrate deploy` terhadap database Production.
+4. Uji kamera dan GPS di HP lewat HTTPS (URL Preview/Production), bukan localhost.

@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
     },
   },
   // Modul yang tidak boleh di-bundle oleh Next (driver DB & generator QR).
-  serverExternalPackages: ["@prisma/adapter-pg", "pg", "qrcode"],
+  serverExternalPackages: ["@prisma/adapter-pg", "pg", "qrcode", "exceljs"],
   async headers() {
     return [
       {
