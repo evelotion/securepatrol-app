@@ -22,8 +22,8 @@ Next.js (App Router), TypeScript, Tailwind CSS, Prisma, PostgreSQL (Neon, ap-sou
 - Rahasia hanya di .env.
 - Pakai TypeScript, hindari any.
 - Database lokal dan preview = Neon branch `dev`. Production (branch `main`) hanya diubah lewat `npx prisma migrate deploy` setelah PR di-merge. Jangan jalankan `migrate dev`, `db push`, atau `migrate reset` ke Production.
-- Satu fitur = satu branch + satu PR. Jangan merge sendiri; merge dilakukan pemilik repo.
-- Kerjakan satu fitur per branch. Untuk fitur besar, tunjukkan rencana dulu sebelum menulis kode.
+- Satu fitur = satu branch + satu PR. Untuk fitur besar, tunjukkan rencana dulu sebelum menulis kode. Jangan merge sendiri; merge dilakukan pemilik repo.
+- Sebelum rilis ke pengguna nyata: pisahkan DB dev dari Production (Neon branch dev).
 - Jangan menjalankan perintah ke database (migrate, seed, query) tanpa izin saya.
 
 ## Gaya Tampilan
