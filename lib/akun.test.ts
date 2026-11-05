@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validasiPasswordBaru } from "./akun";
+import { validasiPasswordBaru, wajibGantiSetelahUbahPassword } from "./akun";
 
 describe("validasiPasswordBaru", () => {
   it("lolos bila semua benar", () => {
@@ -29,5 +29,15 @@ describe("validasiPasswordBaru", () => {
       validasiPasswordBaru({ lama: "lama-123", baru: "baru-12345", konfirmasi: "baru-99999" })
         .konfirmasi,
     ).toBeDefined();
+  });
+});
+
+describe("wajibGantiSetelahUbahPassword", () => {
+  it("wajib ganti bila admin mengubah password orang lain", () => {
+    expect(wajibGantiSetelahUbahPassword("admin-1", "user-9")).toBe(true);
+  });
+
+  it("tidak wajib bila admin mengubah password dirinya sendiri", () => {
+    expect(wajibGantiSetelahUbahPassword("admin-1", "admin-1")).toBe(false);
   });
 });

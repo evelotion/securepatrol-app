@@ -5,6 +5,7 @@ import {
   jadwalBerlaku,
   nilaiTidakHadir,
   rentangKehadiran,
+  rentangKueriAbsensi,
   tanggalPenilaian,
   type AbsensiCocok,
   type JadwalBertanggal,
@@ -191,6 +192,45 @@ describe("shift malam kemarin tetap tertandai cron hari berikutnya (item a)", ()
       "2026-11-04",
       [jadwalMalam("2026-11-04")],
       [absensi(wib("2026-11-05T00:30:00+07:00"), SHIFT_MALAM.id, "TELAT")],
+      wib("2026-11-06T00:10:00+07:00"),
+    );
+    expect(keputusan[0].alasan).toBe("HADIR");
+  });
+});
+
+describe("rentangKueriAbsensi (batas bawah query cron)", () => {
+  it("batas bawah mundur sebesar toleransi awal dari 00:00 WIB", () => {
+    const { gte, lt } = rentangKueriAbsensi("2026-11-05");
+    // 00:00 WIB 5 Nov = 4 Nov 17:00 UTC; dikurangi 2 jam = 15:00 UTC (22:00 WIB 4 Nov).
+    expect(gte.toISOString()).toBe("2026-11-04T15:00:00.000Z");
+    // 00:00 WIB 7 Nov.
+    expect(lt.toISOString()).toBe("2026-11-06T17:00:00.000Z");
+  });
+
+  it("check-in 23:00 WIB hari sebelumnya untuk shift 00:30 masuk rentang dan tidak ditandai", () => {
+    const shiftDinihari: ShiftBerjadwal = {
+      id: "shift-dinihari",
+      nama: "Dinihari",
+      jamMulai: "00:30",
+      jamSelesai: "08:00",
+      toleransiTelatMenit: 15,
+    };
+    const masuk = wib("2026-11-04T23:00:00+07:00");
+    const { gte } = rentangKueriAbsensi("2026-11-05");
+    // Dulu batas bawahnya 00:00 WIB 5 Nov, sehingga baris ini tidak ikut terambil.
+    expect(masuk.getTime()).toBeGreaterThanOrEqual(gte.getTime());
+
+    const keputusan = nilaiTidakHadir(
+      "2026-11-05",
+      [
+        {
+          jadwalId: "j",
+          userId: "u1",
+          shiftId: shiftDinihari.id,
+          shift: shiftDinihari,
+        },
+      ],
+      [absensi(masuk, shiftDinihari.id)],
       wib("2026-11-06T00:10:00+07:00"),
     );
     expect(keputusan[0].alasan).toBe("HADIR");

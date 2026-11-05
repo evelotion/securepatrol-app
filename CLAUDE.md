@@ -31,8 +31,12 @@ Light glassmorphism, clean layout, responsif untuk mobile web.
 
 ## Progress
 Urutan PR mengikuti docs/SPEC-perbaikan.md.
-- [x] Live di main: Fase 1, Fase 2, Fase 3, F4-1 (PR #1)
-- [x] PR #2 `feat/shift-rute` (F4-2 + F4-3): sudah di-review, siap merge
-- [ ] Berikutnya: F4-4 + F4-5 (insiden & tombol darurat) — `feat/insiden-darurat`
-- [ ] Lalu: F4-6 + F4-7 — `feat/pemantauan-laporan`
-- [ ] Lalu: F4-8 — `feat/akun-audit`
+- [x] Live di main: Fase 1, Fase 2, Fase 3, dan seluruh Fase 4 (F4-1 sampai F4-8)
+- [x] 7 migrasi sudah diterapkan ke database Production
+- [ ] Ditunda: Web Push untuk tombol darurat (VAPID), QR dinamis (Fase 2b), export PDF laporan
+- [ ] Sebelum rilis ke pengguna nyata: pisahkan DB dev dari Production, dan nonaktifkan akun uji (`uji.*@uji.test`)
+
+## Catatan operasional
+- Merge PR bertingkat (stacked): merge dari yang paling bawah dan ubah base PR berikutnya ke `main` dulu. Merge ke branch induk yang sudah masuk `main` tidak membawa perubahannya ke `main`.
+- Env Vercel yang baru ditambah (mis. `CRON_SECRET`) baru berlaku setelah redeploy.
+- Redirect dan `notFound()` di dalam Suspense mengembalikan status HTTP 200 dengan isi pengalihan/404, bukan 307/404. Jangan menguji akses halaman hanya dari status HTTP; periksa isinya.

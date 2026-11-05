@@ -70,6 +70,22 @@ export function awalTanggalWIB(tanggal: string): Date {
 }
 
 /**
+ * Rentang `waktuMasuk` yang harus diambil dari DB untuk menilai jadwal pada
+ * `tanggal`: `[00:00 WIB tanggal - toleransi awal, 00:00 WIB tanggal + 2 hari)`.
+ *
+ * Batas bawah memuat toleransi check-in lebih awal, supaya shift yang mulai
+ * 00:00–02:00 dengan absen 22:00–23:59 hari sebelumnya tidak terlewat dan
+ * salah ditandai TIDAK_HADIR. Pencocokan akhir tetap dilakukan
+ * `absensiCocokJadwal`.
+ */
+export function rentangKueriAbsensi(tanggal: string): { gte: Date; lt: Date } {
+  return {
+    gte: new Date(awalTanggalWIB(tanggal).getTime() - TOLERANSI_AWAL_MS),
+    lt: awalTanggalWIB(tambahHari(tanggal, 2)),
+  };
+}
+
+/**
  * Rentang kehadiran satu jadwal: `[mulai - 2 jam, selesai)`.
  * Null bila jam shift tidak valid.
  */

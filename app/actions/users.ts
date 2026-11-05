@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { wajibGantiSetelahUbahPassword } from "@/lib/akun";
 import { requireRole } from "@/lib/auth";
 import { toJson, writeAudit } from "@/lib/audit";
 import type { FormState } from "@/lib/form";
@@ -182,7 +183,11 @@ export async function updateUser(
       role: role as (typeof ROLES)[number],
       regu: regu || null,
       ...(password
-        ? { password: hashPassword(password), harusGantiPassword: true }
+        ? {
+            password: hashPassword(password),
+            // Admin yang mengganti password sendiri tidak dipaksa ganti lagi.
+            harusGantiPassword: wajibGantiSetelahUbahPassword(actor.id, id),
+          }
         : {}),
     },
   });

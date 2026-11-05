@@ -24,3 +24,16 @@ export function validasiPasswordBaru(input: {
 
   return errors;
 }
+
+/**
+ * Apakah password yang diubah admin lewat Master User harus diganti lagi oleh
+ * pemiliknya. Ya bila yang mengubah orang lain (admin tahu password-nya);
+ * tidak bila admin mengubah password dirinya sendiri — ia sendiri yang
+ * memilihnya, jadi tidak perlu dipaksa ganti lagi.
+ */
+export function wajibGantiSetelahUbahPassword(
+  aktorId: string,
+  targetId: string,
+): boolean {
+  return aktorId !== targetId;
+}
