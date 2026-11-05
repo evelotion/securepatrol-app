@@ -36,7 +36,7 @@ export default function PanelLayout({
 }
 
 async function PanelShell({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUser({ izinkanGantiPassword: true });
 
   const navUser: NavUser = {
     nama: user.nama,
@@ -59,6 +59,10 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
   const items: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   ];
+  items.push(
+    { href: "/insiden", label: "Insiden", icon: "insiden" },
+    { href: "/laporan", label: "Laporan", icon: "laporan" },
+  );
   if (JADWAL_ROLES.includes(user.role)) {
     items.push({ href: "/jadwal", label: "Jadwal Jaga", icon: "jadwal" });
   }
@@ -72,8 +76,10 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
       },
       { href: "/master/shifts", label: "Master Shift", icon: "shift" },
       { href: "/master/rute", label: "Master Rute", icon: "rute" },
+      { href: "/master/audit", label: "Audit Log", icon: "audit" },
     );
   }
+  items.push({ href: "/profil", label: "Profil", icon: "profil" });
 
   return (
     <SidebarProvider className="h-screen max-h-dvh overflow-hidden">

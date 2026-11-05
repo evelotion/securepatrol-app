@@ -46,6 +46,8 @@ model User {
   regu      String?
   /// Soft delete: true = aktif, false = dinonaktifkan (tidak pernah hapus permanen).
   aktif     Boolean  @default(true)
+  /// true = wajib ganti password saat login berikutnya (user baru buatan admin / reset admin).
+  harusGantiPassword Boolean @default(false) @map("harus_ganti_password")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -55,6 +57,8 @@ model User {
   auditLogs   AuditLog[]
   fotos       Foto[]
   jadwal      Jadwal[]
+  insidenDilaporkan Insiden[] @relation("InsidenPelapor")
+  insidenDitangani  Insiden[] @relation("InsidenPenangan")
 
   @@map("User")
 }
@@ -76,6 +80,7 @@ model Checkpoint {
 
   patroliLogs PatroliLog[]
   ruteTitik   RuteTitik[]
+  insiden     Insiden[]
 
   @@map("Checkpoint")
 }
@@ -255,4 +260,57 @@ model Session {
 
   @@index([userId])
   @@map("Session")
+}
+
+/// Kategori laporan insiden (F4-4).
+enum KategoriInsiden {
+  KERUSAKAN
+  TAMU_MENCURIGAKAN
+  KEBAKARAN_ASAP
+  KEHILANGAN
+  LAINNYA
+}
+
+/// Prioritas insiden; DARURAT dipakai tombol darurat (F4-5).
+enum PrioritasInsiden {
+  RENDAH
+  SEDANG
+  TINGGI
+  DARURAT
+}
+
+/// Alur status insiden: BARU -> DITANGANI -> SELESAI.
+enum StatusInsiden {
+  BARU
+  DITANGANI
+  SELESAI
+}
+
+/// Laporan insiden (F4-4) dan sinyal darurat (F4-5).
+/// `fotoKeys` berisi key Foto (Cloudinary private), bukan gambar.
+model Insiden {
+  id                   String           @id @default(cuid())
+  userId               String           @map("user_id")
+  kategori             KategoriInsiden
+  prioritas            PrioritasInsiden
+  deskripsi            String
+  fotoKeys             String[]         @map("foto_keys")
+  lat                  Decimal?         @db.Decimal(10, 7)
+  long                 Decimal?         @db.Decimal(10, 7)
+  akurasiM             Int?             @map("akurasi_m")
+  checkpointId         String?          @map("checkpoint_id")
+  status               StatusInsiden    @default(BARU)
+  ditanganiOleh        String?          @map("ditangani_oleh")
+  ditanganiPada        DateTime?        @map("ditangani_pada")
+  catatanTindakLanjut  String?          @map("catatan_tindak_lanjut")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  user       User        @relation("InsidenPelapor", fields: [userId], references: [id], onDelete: Cascade)
+  penangan   User?       @relation("InsidenPenangan", fields: [ditanganiOleh], references: [id], onDelete: SetNull)
+  checkpoint Checkpoint? @relation(fields: [checkpointId], references: [id], onDelete: SetNull)
+
+  @@index([status, prioritas, createdAt])
+  @@index([userId, createdAt])
+  @@map("Insiden")
 }

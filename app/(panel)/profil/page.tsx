@@ -6,17 +6,19 @@ import { ThemeIkutSistem, ThemeToggle } from "@/components/theme-toggle";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { logoutSemuaPerangkat } from "@/app/actions/akun";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
+import { getSesiAktif } from "@/lib/data-akun";
+import { formatDateTime } from "@/lib/format";
 import { ROLE_LABEL } from "@/lib/roles";
 
 import { LogoutButton } from "../logout-button";
+import { GantiPasswordForm } from "./ganti-password-form";
 
 export const metadata = { title: "Profil" };
 
-/**
- * Tab Profil. Ganti password & daftar sesi aktif (F4-8) menyusul;
- * untuk sekarang berisi identitas, tema, dan keluar.
- */
+/** Tab Profil: identitas, tema, ganti password, sesi aktif, dan keluar (F4-8). */
 export default function ProfilPage() {
   return (
     <Suspense
@@ -34,7 +36,9 @@ export default function ProfilPage() {
 }
 
 async function ProfilSection() {
-  const user = await getCurrentUser();
+  // Halaman ini satu-satunya yang boleh dibuka saat wajib ganti password.
+  const user = await getCurrentUser({ izinkanGantiPassword: true });
+  const sesi = await getSesiAktif(user.id);
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,6 +46,13 @@ async function ProfilSection() {
         <p className="eyebrow">Akun</p>
         <h1 className="page-title mt-1">Profil</h1>
       </header>
+
+      {user.harusGantiPassword ? (
+        <p role="alert" className="alert-warn">
+          Demi keamanan, ganti password awal dari admin sebelum memakai
+          aplikasi.
+        </p>
+      ) : null}
 
       <Card className="p-5">
         <div className="flex items-center gap-4">
@@ -85,10 +96,44 @@ async function ProfilSection() {
       </Card>
 
       <Card className="p-5">
-        <h2 className="section-title">Keamanan akun</h2>
+        <h2 className="section-title">Ganti password</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Ganti password dan kelola sesi aktif akan tersedia di rilis berikutnya.
+          Setelah diganti, perangkat lain otomatis keluar.
         </p>
+        <GantiPasswordForm />
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="section-title">Sesi aktif</h2>
+        <ul className="mt-3 divide-y divide-border">
+          {sesi.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  Login {formatDateTime(item.dibuatPada)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Berlaku sampai {formatDateTime(item.berakhirPada)}
+                </p>
+              </div>
+              {item.saatIni ? (
+                <span className="badge badge-green shrink-0">Perangkat ini</span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        <form action={logoutSemuaPerangkat} className="mt-4">
+          <Button type="submit" variant="outline" className="w-full">
+            Keluar dari semua perangkat
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="section-title">Keluar</h2>
         <LogoutButton />
       </Card>
     </div>

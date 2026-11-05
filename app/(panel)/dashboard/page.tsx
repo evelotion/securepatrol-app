@@ -13,6 +13,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { AutoRefresh } from "@/components/auto-refresh";
+import { DaruratBanner } from "@/components/darurat-banner";
 import { StatusScanBadge } from "@/components/status-scan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +29,7 @@ import {
 } from "@/components/ui/table";
 
 import { getDashboardHariIni } from "@/lib/data";
+import { getDaruratAktif } from "@/lib/data-insiden";
 import { formatJam, formatTanggal } from "@/lib/format";
 import { isManager } from "@/lib/roles";
 import { startOfHariWIB } from "@/lib/waktu";
@@ -81,6 +84,7 @@ async function Dashboard() {
   if (!isManager(actor.role)) redirect("/beranda");
 
   const { summary, absensi, checkpoints, logs } = data;
+  const darurat = await getDaruratAktif(actor);
   const persen = persenProgres(
     summary.checkpointTerpatroli,
     summary.totalCheckpointAktif,
@@ -120,6 +124,10 @@ async function Dashboard() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Polling ringan 15 dtk supaya sinyal darurat cepat muncul (F4-5). */}
+      <AutoRefresh intervalMs={15_000} />
+      <DaruratBanner daftar={darurat} />
+
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="eyebrow">{formatTanggal(hariIni)} · WIB</p>
@@ -246,9 +254,12 @@ async function Dashboard() {
                     aria-hidden="true"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">
+                    <Link
+                      href={`/detail/patroli/${log.id}`}
+                      className="block truncate text-sm font-semibold text-primary hover:underline"
+                    >
                       {log.namaCheckpoint}
-                    </p>
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {log.namaUser} · {formatJam(log.waktu)}
                       {log.jarakM !== null ? ` · ${log.jarakM} m` : ""}
@@ -296,9 +307,12 @@ async function Dashboard() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
+                      <Link
+                        href={`/detail/absensi/${row.id}`}
+                        className="block truncate text-sm font-semibold text-primary hover:underline"
+                      >
                         {row.nama}
-                      </p>
+                      </Link>
                       <p className="text-xs text-muted-foreground">
                         {row.regu ?? "—"}
                       </p>
@@ -336,7 +350,14 @@ async function Dashboard() {
                 <TableBody>
                   {absensi.map((row) => (
                     <TableRow key={row.userId}>
-                      <TableCell className="font-medium">{row.nama}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/detail/absensi/${row.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {row.nama}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {row.regu ?? "—"}
                       </TableCell>

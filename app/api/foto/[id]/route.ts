@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getPrivateFotoUrl, isCloudinaryKeyForUser } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
+import { DASHBOARD_ROLES } from "@/lib/roles";
+import { userDalamScope } from "@/lib/scope";
 
 export async function GET(
   _request: Request,
@@ -12,10 +14,23 @@ export async function GET(
   const { id } = await context.params;
   const foto = await prisma.foto.findUnique({
     where: { id },
-    select: { key: true, userId: true, mime: true },
+    select: {
+      key: true,
+      userId: true,
+      mime: true,
+      user: { select: { id: true, regu: true } },
+    },
   });
 
-  if (!foto || foto.userId !== actor.id || !isCloudinaryKeyForUser(foto.key, actor.id)) {
+  // Pemilik selalu boleh. Manager boleh melihat foto bukti anggota dalam
+  // cakupannya (Danru = regunya, Chief/Admin = semua) — F4-6.
+  const boleh =
+    foto !== null &&
+    isCloudinaryKeyForUser(foto.key, foto.userId) &&
+    (foto.userId === actor.id ||
+      (DASHBOARD_ROLES.includes(actor.role) && userDalamScope(actor, foto.user)));
+
+  if (!foto || !boleh) {
     return new NextResponse("Not Found", { status: 404 });
   }
 

@@ -85,6 +85,8 @@ export async function createUser(
       password: hashPassword(password),
       role: role as (typeof ROLES)[number],
       regu: regu || null,
+      // F4-8 — password awal dari admin harus diganti saat login pertama.
+      harusGantiPassword: true,
     },
   });
 
@@ -179,7 +181,9 @@ export async function updateUser(
       username: username || null,
       role: role as (typeof ROLES)[number],
       regu: regu || null,
-      ...(password ? { password: hashPassword(password) } : {}),
+      ...(password
+        ? { password: hashPassword(password), harusGantiPassword: true }
+        : {}),
     },
   });
 
