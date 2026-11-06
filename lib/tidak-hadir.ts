@@ -2,13 +2,13 @@ import "server-only";
 
 import { writeAudit } from "@/lib/audit";
 import {
-  awalTanggalWIB,
   nilaiTidakHadir,
+  rentangKueriAbsensi,
   type AbsensiCocok,
   type JadwalPenilaian,
 } from "@/lib/kehadiran";
 import { prisma } from "@/lib/prisma";
-import { tambahHari, tanggalDB } from "@/lib/shift";
+import { tanggalDB } from "@/lib/shift";
 
 /**
  * F4-2 — tandai jadwal yang tidak punya absensi sebagai TIDAK_HADIR.
@@ -36,10 +36,8 @@ export async function tandaiTidakHadir(
   const absensi: AbsensiCocok[] = await prisma.absensi.findMany({
     where: {
       userId: { in: [...new Set(jadwal.map((row) => row.userId))] },
-      waktuMasuk: {
-        gte: awalTanggalWIB(tanggal),
-        lt: awalTanggalWIB(tambahHari(tanggal, 2)),
-      },
+      // Batas bawah memuat toleransi check-in lebih awal (lihat rentangKueriAbsensi).
+      waktuMasuk: rentangKueriAbsensi(tanggal),
     },
     select: {
       userId: true,
