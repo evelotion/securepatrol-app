@@ -10,6 +10,7 @@ export type AkunUji = {
 const DAFTAR = {
   secA: { email: "uji.sec.a@uji.test", nama: "Uji Security A", env: "E2E_PASSWORD_SEC_A" },
   danruA: { email: "uji.danru.a@uji.test", nama: "Uji Danru A", env: "E2E_PASSWORD_DANRU_A" },
+  admin: { email: "uji.admin@uji.test", nama: "Uji Admin", env: "E2E_PASSWORD_ADMIN" },
   chief: { email: "uji.chief@uji.test", nama: "Uji Chief", env: "E2E_PASSWORD_CHIEF" },
 } as const;
 

@@ -103,7 +103,7 @@ export function ShiftsClient({ shifts }: { shifts: ShiftRow[] }) {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="aksi"
                       onClick={() => {
                         setFlash(null);
                         setEditing(shift);
@@ -151,7 +151,7 @@ export function ShiftsClient({ shifts }: { shifts: ShiftRow[] }) {
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="aksi"
                             onClick={() => {
                               setFlash(null);
                               setEditing(shift);
@@ -193,8 +193,8 @@ function ToggleAktif({ shift }: { shift: ShiftRow }) {
       <input type="hidden" name="id" value={shift.id} />
       <Button
         type="submit"
-        variant={shift.aktif ? "destructive" : "outline"}
-        size="sm"
+        variant={shift.aktif ? "outline-bahaya" : "outline-ok"}
+        size="aksi"
       >
         {shift.aktif ? "Nonaktifkan" : "Aktifkan"}
       </Button>

@@ -2,8 +2,7 @@ import { Suspense } from "react";
 
 import Link from "next/link";
 
-import { Download } from "lucide-react";
-
+import { ExportExcel } from "@/components/export-excel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { bacaFilterLaporan, getLaporan } from "@/lib/data-laporan";
+import { thumbnailDiizinkan } from "@/lib/excel-baris";
 import { formatTanggal } from "@/lib/format";
 
 export const metadata = { title: "Laporan" };
@@ -66,12 +66,10 @@ async function LaporanSection({ searchParams }: { searchParams: SearchParams }) 
             .
           </p>
         </div>
-        <Button asChild>
-          <a href={`/api/laporan/excel?${exportQuery.toString()}`}>
-            <Download className="size-4" aria-hidden="true" />
-            Export Excel
-          </a>
-        </Button>
+        <ExportExcel
+          query={exportQuery.toString()}
+          bolehThumbnail={thumbnailDiizinkan(filter.dari, filter.sampai)}
+        />
       </header>
 
       <Card className="p-4">

@@ -116,3 +116,4 @@ BASE_URL=https://<preview>.vercel.app npm run test:e2e
 - Setup/teardown hanya menghapus absensi, patroli, insiden, dan foto milik `uji.sec.a@uji.test` (AuditLog tidak dihapus). `DATABASE_URL` harus menunjuk DB yang sama dengan `BASE_URL`.
 - Yang ditiru: kamera (pola uji, bukan QR), GPS, dan hasil scan QR (kolom kode diisi langsung). Unggahan foto ke Cloudinary nyata, tidak di-mock; asetnya tetap tinggal di Cloudinary.
 - CI (`.github/workflows/ci.yml`) hanya menjalankan typecheck, lint, dan unit test. E2E dijalankan manual.
+- `E2E_SIMPAN_DATA=1` melewati teardown (data uji tetap ada, mis. untuk mengambil contoh Excel). Spec `checkpoint-lokasi` tidak menyimpan apa pun.

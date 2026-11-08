@@ -68,7 +68,7 @@ export function JadwalClient({ data }: { data: JadwalMingguan }) {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="aksi-ikon">
               <Link
                 href={`/jadwal?pekan=${pekanSebelumnya}`}
                 aria-label="Pekan sebelumnya"
@@ -76,7 +76,7 @@ export function JadwalClient({ data }: { data: JadwalMingguan }) {
                 <ChevronLeft className="size-4" aria-hidden="true" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="aksi-ikon">
               <Link
                 href={`/jadwal?pekan=${pekanBerikutnya}`}
                 aria-label="Pekan berikutnya"
