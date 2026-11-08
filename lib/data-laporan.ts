@@ -47,6 +47,27 @@ export function bacaFilterLaporan(sp: {
   };
 }
 
+/**
+ * Filter user untuk laporan. Cakupan dan filter digabung dengan AND (bukan
+ * spread) supaya parameter `regu`/`user` dari URL tidak bisa menimpa batas
+ * regu milik Danru. `hanyaSecurity=false` dipakai untuk insiden (pelapor bisa
+ * siapa saja dalam cakupan).
+ */
+export function whereUserLaporan(
+  actor: SessionUser,
+  filter: LaporanFilter,
+  hanyaSecurity = true,
+): Prisma.UserWhereInput {
+  return {
+    AND: [
+      whereUserDalamScope(actor),
+      ...(hanyaSecurity ? [{ role: "SECURITY" as const }] : []),
+      ...(filter.regu ? [{ regu: filter.regu }] : []),
+      ...(filter.userId ? [{ id: filter.userId }] : []),
+    ],
+  };
+}
+
 export type Laporan = {
   actor: SessionUser;
   filter: LaporanFilter;
@@ -66,16 +87,7 @@ export async function getLaporan(filter: LaporanFilter): Promise<Laporan> {
   const actor = await requireRole(DASHBOARD_ROLES);
 
   const cakupan = whereUserDalamScope(actor);
-  // Cakupan dan filter digabung dengan AND (bukan spread) supaya parameter
-  // `regu`/`user` dari URL tidak bisa menimpa batas regu milik Danru.
-  const whereUser: Prisma.UserWhereInput = {
-    AND: [
-      cakupan,
-      { role: "SECURITY" },
-      ...(filter.regu ? [{ regu: filter.regu }] : []),
-      ...(filter.userId ? [{ id: filter.userId }] : []),
-    ],
-  };
+  const whereUser = whereUserLaporan(actor, filter);
 
   const awal = awalTanggalWIB(filter.dari);
   const akhir = awalTanggalWIB(tambahHari(filter.sampai, 1));

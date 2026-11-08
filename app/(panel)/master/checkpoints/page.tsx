@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { listCheckpoints } from "@/lib/data";
 
+import { PATROL_RADIUS_M } from "@/lib/geo";
 import { CheckpointsClient } from "./checkpoints-client";
 
 export const metadata = { title: "Master Checkpoint" };
@@ -44,7 +45,7 @@ async function CheckpointsSection() {
         <span className="badge badge-slate">{checkpoints.length} titik</span>
       </header>
 
-      <CheckpointsClient checkpoints={checkpoints} />
+      <CheckpointsClient checkpoints={checkpoints} radiusM={PATROL_RADIUS_M} />
     </div>
   );
 }

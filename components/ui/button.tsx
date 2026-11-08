@@ -19,12 +19,20 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Aksi destruktif/pemulihan di tabel: outline berwarna, bukan solid penuh.
+        "outline-bahaya":
+          "border border-[var(--status-bad)] bg-card text-[var(--status-bad-text)] hover:bg-[color-mix(in_oklab,var(--status-bad)_10%,transparent)]",
+        "outline-ok":
+          "border border-[var(--status-ok)] bg-card text-[var(--status-ok-text)] hover:bg-[color-mix(in_oklab,var(--status-ok)_10%,transparent)]",
       },
       size: {
         default: "h-12 px-5",
         sm: "h-10 rounded-[var(--radius-sm)] px-3 text-xs",
         lg: "h-16 rounded-[var(--radius)] px-6 text-base",
         icon: "h-12 w-12",
+        // Tombol aksi di tabel/kartu: tinggi dan lebar tetap agar sejajar antar baris.
+        "aksi-ikon": "h-9 w-9 shrink-0 rounded-[var(--radius-sm)] px-0",
+        aksi: "h-9 w-28 shrink-0 rounded-[var(--radius-sm)] px-3 text-xs",
       },
     },
     defaultVariants: {

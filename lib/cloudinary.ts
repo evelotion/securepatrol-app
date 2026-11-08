@@ -95,3 +95,18 @@ export function getPrivateFotoUrl(publicId: string, now = Date.now()): string {
 export function isCloudinaryKeyForUser(key: string, userId: string): boolean {
   return key.startsWith(`${FOTO_FOLDER}/${userId}/`);
 }
+
+/** URL bertanda tangan untuk thumbnail kecil (dipakai tanam gambar di Excel). */
+export function getThumbFotoUrl(publicId: string, sisiPx = 160): string {
+  getCloudinarySettings();
+  return cloudinary.url(publicId, {
+    resource_type: "image",
+    type: "private",
+    sign_url: true,
+    secure: true,
+    format: "jpg",
+    transformation: [
+      { width: sisiPx, height: sisiPx, crop: "limit", quality: "auto:low" },
+    ],
+  });
+}

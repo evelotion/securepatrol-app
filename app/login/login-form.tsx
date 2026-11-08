@@ -48,7 +48,7 @@ export function LoginForm() {
           type="text"
           autoComplete="username"
           autoCapitalize="none"
-          placeholder="admin@securepatrol.id"
+          placeholder="Email atau username"
           required
         />
       </div>

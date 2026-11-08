@@ -189,7 +189,7 @@ export function UsersClient({
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="aksi"
                       onClick={() => {
                         setFlash(null);
                         setEditing(user);
@@ -256,7 +256,7 @@ export function UsersClient({
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="aksi"
                             onClick={() => {
                               setFlash(null);
                               setEditing(user);
@@ -281,7 +281,7 @@ export function UsersClient({
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="aksi-ikon"
                   onClick={() => setHalaman(Math.max(1, aktifHalaman - 1))}
                   disabled={aktifHalaman <= 1}
                   aria-label="Halaman sebelumnya"
@@ -293,7 +293,7 @@ export function UsersClient({
                 </span>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="aksi-ikon"
                   onClick={() =>
                     setHalaman(Math.min(totalHalaman, aktifHalaman + 1))
                   }
@@ -329,19 +329,24 @@ function ToggleAktif({ user, actorId }: { user: UserRow; actorId: string }) {
   return (
     <form action={toggleUserAktif} className="inline">
       <input type="hidden" name="id" value={user.id} />
-      <Button
-        type="submit"
-        variant={user.aktif ? "destructive" : "outline"}
-        size="sm"
-        disabled={user.id === actorId && user.aktif}
+      {/* title di <span>: tombol disabled tidak menerima pointer event. */}
+      <span
         title={
           user.id === actorId && user.aktif
             ? "Tidak bisa menonaktifkan akun sendiri"
             : undefined
         }
+        className="inline-flex"
       >
-        {user.aktif ? "Nonaktifkan" : "Aktifkan"}
-      </Button>
+        <Button
+          type="submit"
+          variant={user.aktif ? "outline-bahaya" : "outline-ok"}
+          size="aksi"
+          disabled={user.id === actorId && user.aktif}
+        >
+          {user.aktif ? "Nonaktifkan" : "Aktifkan"}
+        </Button>
+      </span>
     </form>
   );
 }
@@ -436,7 +441,7 @@ function UserForm({
           name="email"
           type="email"
           defaultValue={user?.email ?? ""}
-          placeholder="budi@securepatrol.id"
+          placeholder="nama@perusahaan.co.id"
           aria-invalid={Boolean(state?.errors?.email)}
           required
         />

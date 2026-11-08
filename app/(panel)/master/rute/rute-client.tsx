@@ -116,7 +116,7 @@ export function RuteClient({
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="aksi"
                     onClick={() => {
                       setFlash(null);
                       setEditing(item);
@@ -128,8 +128,8 @@ export function RuteClient({
                     <input type="hidden" name="id" value={item.id} />
                     <Button
                       type="submit"
-                      variant={item.aktif ? "destructive" : "outline"}
-                      size="sm"
+                      variant={item.aktif ? "outline-bahaya" : "outline-ok"}
+                      size="aksi"
                     >
                       {item.aktif ? "Nonaktifkan" : "Aktifkan"}
                     </Button>

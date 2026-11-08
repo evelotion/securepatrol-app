@@ -21,6 +21,7 @@ import {
   toggleCheckpointAktif,
   updateCheckpoint,
 } from "@/app/actions/checkpoints";
+import { LokasiCheckpoint } from "@/components/lokasi-checkpoint";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,8 +49,10 @@ const PER_HALAMAN = 8;
 
 export function CheckpointsClient({
   checkpoints,
+  radiusM,
 }: {
   checkpoints: CheckpointRow[];
+  radiusM: number;
 }) {
   const [flash, setFlash] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -192,7 +195,7 @@ export function CheckpointsClient({
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="aksi"
                       onClick={() => {
                         setFlash(null);
                         setEditing(cp);
@@ -202,7 +205,7 @@ export function CheckpointsClient({
                     </Button>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="aksi"
                       onClick={() => setPrinting(cp)}
                     >
                       <Printer className="size-4" aria-hidden="true" />
@@ -266,7 +269,7 @@ export function CheckpointsClient({
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="aksi-ikon"
                             onClick={() => setPrinting(cp)}
                             aria-label={`Cetak label ${cp.namaTitik}`}
                           >
@@ -274,7 +277,7 @@ export function CheckpointsClient({
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="aksi"
                             onClick={() => {
                               setFlash(null);
                               setEditing(cp);
@@ -299,7 +302,7 @@ export function CheckpointsClient({
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="aksi-ikon"
                   onClick={() => setHalaman(Math.max(1, aktifHalaman - 1))}
                   disabled={aktifHalaman <= 1}
                   aria-label="Halaman sebelumnya"
@@ -311,7 +314,7 @@ export function CheckpointsClient({
                 </span>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="aksi-ikon"
                   onClick={() =>
                     setHalaman(Math.min(totalHalaman, aktifHalaman + 1))
                   }
@@ -329,6 +332,7 @@ export function CheckpointsClient({
       <CheckpointFormSheet
         open={creating}
         checkpoint={null}
+        radiusM={radiusM}
         onClose={closeCreate}
         onSuccess={onSuccess}
       />
@@ -336,6 +340,7 @@ export function CheckpointsClient({
       <CheckpointFormSheet
         open={editing !== null}
         checkpoint={editing}
+        radiusM={radiusM}
         onClose={closeEdit}
         onSuccess={onSuccess}
       />
@@ -351,8 +356,8 @@ function ToggleAktif({ checkpoint }: { checkpoint: CheckpointRow }) {
       <input type="hidden" name="id" value={checkpoint.id} />
       <Button
         type="submit"
-        variant={checkpoint.aktif ? "destructive" : "outline"}
-        size="sm"
+        variant={checkpoint.aktif ? "outline-bahaya" : "outline-ok"}
+        size="aksi"
       >
         {checkpoint.aktif ? "Nonaktifkan" : "Aktifkan"}
       </Button>
@@ -363,11 +368,13 @@ function ToggleAktif({ checkpoint }: { checkpoint: CheckpointRow }) {
 function CheckpointFormSheet({
   open,
   checkpoint,
+  radiusM,
   onClose,
   onSuccess,
 }: {
   open: boolean;
   checkpoint: CheckpointRow | null;
+  radiusM: number;
   onClose: () => void;
   onSuccess: (message: string) => void;
 }) {
@@ -390,6 +397,7 @@ function CheckpointFormSheet({
         {open ? (
           <CheckpointForm
             checkpoint={checkpoint}
+            radiusM={radiusM}
             onClose={onClose}
             onSuccess={onSuccess}
           />
@@ -401,10 +409,12 @@ function CheckpointFormSheet({
 
 function CheckpointForm({
   checkpoint,
+  radiusM,
   onClose,
   onSuccess,
 }: {
   checkpoint: CheckpointRow | null;
+  radiusM: number;
   onClose: () => void;
   onSuccess: (message: string) => void;
 }) {
@@ -463,39 +473,13 @@ function CheckpointForm({
         {error("kodeBarcode")}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="field">
-          <label className="field-label" htmlFor="lat">
-            Latitude
-          </label>
-          <Input
-            id="lat"
-            name="lat"
-            inputMode="decimal"
-            defaultValue={checkpoint?.lat ?? ""}
-            placeholder="-6.2000000"
-            aria-invalid={Boolean(state?.errors?.lat)}
-            className="mono-num"
-          />
-          {error("lat")}
-        </div>
-
-        <div className="field">
-          <label className="field-label" htmlFor="long">
-            Longitude
-          </label>
-          <Input
-            id="long"
-            name="long"
-            inputMode="decimal"
-            defaultValue={checkpoint?.long ?? ""}
-            placeholder="106.8166667"
-            aria-invalid={Boolean(state?.errors?.long)}
-            className="mono-num"
-          />
-          {error("long")}
-        </div>
-      </div>
+      <LokasiCheckpoint
+        latAwal={checkpoint?.lat ?? null}
+        longAwal={checkpoint?.long ?? null}
+        radiusM={radiusM}
+        errorLat={state?.errors?.lat}
+        errorLong={state?.errors?.long}
+      />
 
       <div className="field">
         <label className="field-label" htmlFor="keterangan">
@@ -542,7 +526,7 @@ function PrintLabel({
       <div className="w-full max-w-xs rounded-[var(--radius)] border border-border bg-card p-5">
         <div className="no-print mb-4 flex items-center justify-between gap-2">
           <h2 className="section-title">Label Checkpoint</h2>
-          <Button variant="outline" size="sm" onClick={onClose}>
+          <Button variant="outline" size="aksi" onClick={onClose}>
             Tutup
           </Button>
         </div>

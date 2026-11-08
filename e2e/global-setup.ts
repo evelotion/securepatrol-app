@@ -4,6 +4,8 @@ import { bersihkanJejakE2E } from "./db";
 export default async function globalSetup(): Promise<() => Promise<void>> {
   await bersihkanJejakE2E();
   return async () => {
+    // E2E_SIMPAN_DATA=1: biarkan data uji tetap ada (mis. untuk mengambil contoh Excel).
+    if (process.env.E2E_SIMPAN_DATA === "1") return;
     await bersihkanJejakE2E();
   };
 }
