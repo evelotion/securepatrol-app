@@ -38,6 +38,17 @@ test("form checkpoint: GPS, peta, dan tautan Google Maps mengisi koordinat", asy
   await expect(page.locator(".peta-pin")).toBeVisible();
   await expect(page.locator("path.leaflet-interactive")).toBeVisible(); // lingkaran radius
 
+  // Radius per titik: lingkaran mengikuti nilai; nilai di luar batas ditolak.
+  const lingkaran = page.locator("path.leaflet-interactive");
+  const lebarBawaan = (await lingkaran.boundingBox())!.width;
+  await page.locator("#radiusM").fill("5");
+  await expect(page.getByText(/Radius harus bilangan bulat 10–1000/)).toBeVisible();
+  await page.locator("#radiusM").fill("30");
+  await expect(page.getByText(/Radius harus bilangan bulat/)).toHaveCount(0);
+  await expect
+    .poll(async () => (await lingkaran.boundingBox())!.width)
+    .toBeLessThan(lebarBawaan);
+
   await page.getByText("Atur manual").click();
   await expect(page.locator("#lat")).toHaveValue(/^-6\.2000/);
   await expect(page.locator("#long")).toHaveValue(/^106\.8166/);
