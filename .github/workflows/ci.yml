@@ -17,6 +17,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # LayoutProps/PageProps adalah tipe global hasil generate Next; belum ada di checkout bersih.
+      - run: npx next typegen
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
