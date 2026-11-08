@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { PEMEGANG_HAK_CIPTA, TEKS_HAK_CIPTA } from "@/lib/app-info";
 
 import "./globals.css";
 
@@ -30,6 +31,10 @@ export const metadata: Metadata = {
   description:
     "Aplikasi absensi kehadiran dan patroli sekuriti berbasis QR & GPS.",
   applicationName: "SecurePatrol",
+  authors: [{ name: PEMEGANG_HAK_CIPTA }],
+  creator: PEMEGANG_HAK_CIPTA,
+  publisher: PEMEGANG_HAK_CIPTA,
+  other: { copyright: TEKS_HAK_CIPTA },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 
 import { ExportExcel } from "@/components/export-excel";
+import { PanelScanMencurigakan } from "@/components/panel-scan-mencurigakan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { bacaFilterLaporan, getLaporan } from "@/lib/data-laporan";
+import { getScanMencurigakan } from "@/lib/data-mencurigakan";
 import { thumbnailDiizinkan } from "@/lib/excel-baris";
 import { formatTanggal } from "@/lib/format";
 
@@ -34,7 +36,10 @@ async function LaporanSection({ searchParams }: { searchParams: SearchParams }) 
   }
 
   const filter = bacaFilterLaporan(params);
-  const laporan = await getLaporan(filter);
+  const [laporan, mencurigakan] = await Promise.all([
+    getLaporan(filter),
+    getScanMencurigakan(filter),
+  ]);
   const { ringkasan: r } = laporan;
 
   const exportQuery = new URLSearchParams({ dari: filter.dari, sampai: filter.sampai });
@@ -125,6 +130,11 @@ async function LaporanSection({ searchParams }: { searchParams: SearchParams }) 
           </Card>
         ))}
       </section>
+
+      <PanelScanMencurigakan
+        data={mencurigakan}
+        keterangan={`${formatTanggal(`${filter.dari}T00:00:00+07:00`)} – ${formatTanggal(`${filter.sampai}T00:00:00+07:00`)}`}
+      />
 
       <Card className="p-4">
         <h2 className="section-title">Kehadiran per personel</h2>

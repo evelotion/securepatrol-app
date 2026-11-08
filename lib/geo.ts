@@ -10,6 +10,29 @@ export const PATROL_RADIUS_M = Number(process.env.PATROL_RADIUS_M ?? "") > 0
   ? Number(process.env.PATROL_RADIUS_M)
   : 100;
 
+/** Batas radius per titik yang boleh diatur admin (meter). */
+export const RADIUS_MIN_M = 10;
+export const RADIUS_MAKS_M = 1000;
+
+/**
+ * Baca radius per titik dari form. Kosong = null (pakai PATROL_RADIUS_M);
+ * selain itu harus bilangan bulat RADIUS_MIN_M..RADIUS_MAKS_M.
+ */
+export function parseRadius(
+  mentah: string,
+): { ok: true; nilai: number | null } | { ok: false; error: string } {
+  const teks = mentah.trim();
+  if (teks === "") return { ok: true, nilai: null };
+  const n = Number(teks);
+  if (!Number.isInteger(n) || n < RADIUS_MIN_M || n > RADIUS_MAKS_M) {
+    return {
+      ok: false,
+      error: `Radius harus bilangan bulat ${RADIUS_MIN_M}–${RADIUS_MAKS_M} meter (kosongkan untuk bawaan).`,
+    };
+  }
+  return { ok: true, nilai: n };
+}
+
 /** Akurasi maksimum GPS (meter); dapat dikonfigurasi lewat env. */
 export const PATROL_MAX_ACCURACY_M =
   Number(process.env.PATROL_MAX_ACCURACY_M ?? "") > 0
@@ -40,9 +63,44 @@ export type ValidasiScanInput = {
   scanSebelumnya: ScanSebelumnya | null;
   scanCheckpointSebelumnya: Date | null;
   sedangBertugas: boolean;
+  /** Radius khusus titik (meter); kosong = PATROL_RADIUS_M. */
   radiusM?: number;
   akurasiMaksM?: number;
+  /**
+   * Anti titik palsu: batas waktu tempuh minimum dari scan sebelumnya dalam
+   * putaran rute yang sama. Null/kosong = aturan tidak berlaku (mis. tanpa rute).
+   */
+  waktuTempuh?: WaktuTempuhInput | null;
 };
+
+export type WaktuTempuhInput = {
+  minDetik: number;
+  /** Scan terakhir user ini di putaran yang sama (titik apa pun), atau null. */
+  scanSebelumnyaDiPutaran: Date | null;
+};
+
+/** Alasan baku untuk scan yang terlalu cepat; dipakai juga oleh panel Scan mencurigakan. */
+export const ALASAN_TERLALU_CEPAT = "terlalu cepat dari titik sebelumnya";
+
+/**
+ * Fallback anti titik palsu: jeda minimum global (detik) antar scan ke
+ * checkpoint BERBEDA bagi petugas tanpa rute/jadwal aktif. Env PATROL_MIN_JEDA_DETIK.
+ */
+export const PATROL_MIN_JEDA_DETIK =
+  Number(process.env.PATROL_MIN_JEDA_DETIK ?? "") > 0
+    ? Number(process.env.PATROL_MIN_JEDA_DETIK)
+    : 30;
+
+/** Batas bawah bawaan waktu tempuh antar titik (detik). */
+export const MIN_DETIK_BAWAAN = 60;
+
+/** true bila jeda dari scan sebelumnya lebih pendek dari batas minimum. */
+export function terlaluCepat(sekarang: Date, w: WaktuTempuhInput | null | undefined): boolean {
+  if (!w || !w.scanSebelumnyaDiPutaran) return false;
+  if (!Number.isFinite(w.minDetik) || w.minDetik <= 0) return false;
+  const jedaDetik = (sekarang.getTime() - w.scanSebelumnyaDiPutaran.getTime()) / 1000;
+  return jedaDetik < w.minDetik;
+}
 
 export type HasilValidasiScan = {
   ditolak: boolean;
@@ -100,7 +158,7 @@ function ditolak(mesin: string): HasilValidasiScan {
  * Rules 5 dan 7 menolak scan (tidak membuat log); rules lainnya menghasilkan
  * log dengan status bertingkat dan alasan pertama yang cocok.
  */
-export function validasiScan(input: ValidasiScanInput): HasilValidasiScan {
+function validasiAturanDasar(input: ValidasiScanInput): HasilValidasiScan {
   const {
     sekarang,
     posisiHP,
@@ -204,5 +262,24 @@ export function validasiScan(input: ValidasiScanInput): HasilValidasiScan {
     alasan: null,
     jarakM,
     akurasiM: Math.round(akurasiM),
+  };
+}
+
+/**
+ * Penilaian akhir scan: aturan Fase 2 + anti titik palsu. Scan yang terlalu
+ * cepat dari titik sebelumnya di putaran yang sama selalu TIDAK_VALID, apa pun
+ * hasil aturan lain; alasan lain (bila ada) ditambahkan di belakangnya.
+ * Scan yang ditolak (tidak disimpan) tidak diubah.
+ */
+export function validasiScan(input: ValidasiScanInput): HasilValidasiScan {
+  const hasil = validasiAturanDasar(input);
+  if (hasil.ditolak || !terlaluCepat(input.sekarang, input.waktuTempuh)) return hasil;
+
+  return {
+    ...hasil,
+    status: "TIDAK_VALID",
+    alasan: hasil.alasan && hasil.status === "TIDAK_VALID"
+      ? `${ALASAN_TERLALU_CEPAT}; ${hasil.alasan}`
+      : ALASAN_TERLALU_CEPAT,
   };
 }

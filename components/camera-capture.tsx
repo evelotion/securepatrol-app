@@ -34,7 +34,8 @@ export function CameraCapture({
   label?: string;
   facing?: "user" | "environment";
   hint?: string;
-  watermark?: string;
+  /** Wajib: cap tanggal/lokasi/nama ditanam ke piksel foto. Tidak ada unggahan dari galeri. */
+  watermark: string;
   /** Tampilan kamera besar untuk halaman lapangan. */
   hero?: boolean;
   /** Bingkai wajah untuk selfie absensi. */
@@ -120,7 +121,7 @@ export function CameraCapture({
       const padding = Math.round(fontSize * 0.65);
       context.font = `600 ${fontSize}px sans-serif`;
       context.textBaseline = "bottom";
-      const lines = watermark.split("\n").slice(0, 3);
+      const lines = watermark.split("\n").slice(0, 4);
       const lineHeight = Math.round(fontSize * 1.35);
       const textWidth = Math.max(...lines.map((line) => context.measureText(line).width));
       const blockHeight = lines.length * lineHeight + padding * 2;

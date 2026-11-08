@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkpointTerlewat, hitungPutaran, type TitikRute } from "./rute";
+import { checkpointTerlewat, hitungPutaran, putaranBerjalan, type TitikRute } from "./rute";
 import type { ShiftJam } from "./shift";
 
 const wib = (iso: string): Date => new Date(iso);
@@ -149,5 +149,37 @@ describe("checkpointTerlewat", () => {
     expect(checkpointTerlewat(putaran)).toEqual(
       new Set(["cp-parkir", "cp-atap"]),
     );
+  });
+});
+
+describe("putaranBerjalan", () => {
+  const rute = { targetPutaran: 4, intervalMenit: 120 };
+  const cari = (iso: string) =>
+    putaranBerjalan({ rute, shift: SHIFT_PAGI, tanggal: "2026-11-04", sekarang: wib(iso) });
+
+  it("memilih jendela yang memuat sekarang", () => {
+    const p = cari("2026-11-04T11:30:00+07:00");
+    expect(p?.putaran).toBe(2);
+    expect(p?.mulai.toISOString()).toBe("2026-11-04T03:00:00.000Z");
+    expect(p?.selesai.toISOString()).toBe("2026-11-04T05:00:00.000Z");
+  });
+
+  it("batas jendela: tepat di awal putaran berikutnya masuk putaran berikutnya", () => {
+    expect(cari("2026-11-04T10:00:00+07:00")?.putaran).toBe(2);
+  });
+
+  it("null di luar shift", () => {
+    expect(cari("2026-11-04T07:00:00+07:00")).toBeNull();
+    expect(cari("2026-11-04T17:00:00+07:00")).toBeNull();
+  });
+
+  it("null di celah setelah putaran terakhir bila target lebih pendek dari shift", () => {
+    const p = putaranBerjalan({
+      rute: { targetPutaran: 1, intervalMenit: 60 },
+      shift: SHIFT_PAGI,
+      tanggal: "2026-11-04",
+      sekarang: wib("2026-11-04T12:00:00+07:00"),
+    });
+    expect(p).toBeNull();
   });
 });

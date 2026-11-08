@@ -366,6 +366,7 @@ export async function listCheckpoints(): Promise<CheckpointRow[]> {
       lat: c.lat === null ? null : c.lat.toString(),
       long: c.long === null ? null : c.long.toString(),
       keterangan: c.keterangan,
+      radiusM: c.radiusM,
       aktif: c.aktif,
       qrSvg: await toQrSvg(c.kodeBarcode),
     })),

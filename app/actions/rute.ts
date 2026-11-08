@@ -23,7 +23,15 @@ type RuteInput = {
   intervalMenit: number;
 };
 
-type TitikInput = { checkpointId: string; urutan: number };
+type TitikInput = {
+  checkpointId: string;
+  urutan: number;
+  /** Anti titik palsu: waktu tempuh minimum dari titik sebelumnya (detik). */
+  minDetikDariSebelumnya: number;
+};
+
+const MIN_DETIK_BAWAAN = 60;
+const MAKS_MIN_DETIK = 3600;
 
 function bacaInput(formData: FormData): RuteInput {
   const shiftId = str(formData.get("shiftId"));
@@ -70,12 +78,18 @@ function bacaTitik(formData: FormData): {
 
     const checkpointId = kunci.slice("pilih_".length);
     const urutanRaw = Number(str(formData.get(`urutan_${checkpointId}`)));
+    const minRaw = str(formData.get(`min_${checkpointId}`));
+    const minDetik = minRaw === "" ? MIN_DETIK_BAWAAN : Number(minRaw);
+    if (!Number.isInteger(minDetik) || minDetik < 0 || minDetik > MAKS_MIN_DETIK) {
+      errors.titik = `Waktu tempuh minimum harus 0–${MAKS_MIN_DETIK} detik (bilangan bulat).`;
+    }
     titik.push({
       checkpointId,
       urutan:
         Number.isFinite(urutanRaw) && urutanRaw > 0
           ? Math.floor(urutanRaw)
           : titik.length + 1,
+      minDetikDariSebelumnya: Number.isInteger(minDetik) ? minDetik : MIN_DETIK_BAWAAN,
     });
   }
 
@@ -83,6 +97,7 @@ function bacaTitik(formData: FormData): {
     errors.titik = "Pilih minimal satu titik untuk rute ini.";
     return { titik, errors };
   }
+  if (errors.titik) return { titik, errors };
 
   const urutanTerpakai = new Set<number>();
   for (const t of titik) {
@@ -167,6 +182,7 @@ export async function createRute(
           create: titik.map((t) => ({
             checkpointId: t.checkpointId,
             urutan: t.urutan,
+            minDetikDariSebelumnya: t.minDetikDariSebelumnya,
           })),
         },
       },
@@ -178,7 +194,9 @@ export async function createRute(
       tabel: "Rute",
       dataBaru: toJson({
         ...created,
-        titik: titik.map((t) => t.urutan).sort((a, b) => a - b),
+        titik: [...titik]
+          .sort((a, b) => a.urutan - b.urutan)
+          .map((t) => ({ urutan: t.urutan, minDetik: t.minDetikDariSebelumnya })),
       }),
     });
 
@@ -229,6 +247,7 @@ export async function updateRute(
             create: titik.map((t) => ({
               checkpointId: t.checkpointId,
               urutan: t.urutan,
+              minDetikDariSebelumnya: t.minDetikDariSebelumnya,
             })),
           },
         },

@@ -5,7 +5,7 @@ import {
   type Page,
 } from "@playwright/test";
 
-import { akun } from "./akun";
+import { ambilFoto, masuk } from "./bantu";
 import { hitungInsidenSecA, idAbsensiSecB, statusDaruratSecA } from "./db";
 import { OPSI_KONTEKS } from "./konteks";
 
@@ -26,29 +26,6 @@ let ctxChief: BrowserContext;
 let sec: Page;
 let danru: Page;
 
-async function login(page: Page, kunci: "secA" | "danruA" | "chief") {
-  const a = akun(kunci);
-  await page.goto("/login");
-  await page.locator('input[name="identifier"]').fill(a.email);
-  await page.locator('input[name="password"]').fill(a.password);
-  await page.getByRole("button", { name: /masuk/i }).click();
-  await page.waitForURL(/\/(dashboard|beranda)/);
-}
-
-/** Buka kamera palsu, ambil foto, tunggu terunggah ke Cloudinary. */
-async function ambilFoto(page: Page, label: string) {
-  await page.getByRole("button", { name: "Buka Kamera" }).click();
-  // Tunggu frame video pertama; tanpa ini tombol ambil bisa ditekan sebelum kamera siap.
-  await page.waitForFunction(() => {
-    const v = document.querySelector("video");
-    return !!v && v.videoWidth > 0 && v.readyState >= 2;
-  });
-  await page.getByRole("button", { name: `Ambil ${label}`, exact: true }).click();
-  await expect(page.getByText(`${label} tersimpan`)).toBeVisible({
-    timeout: 60_000,
-  });
-}
-
 test.beforeAll(async ({ browser }) => {
   ctxSec = await browser.newContext(OPSI_KONTEKS);
   ctxDanru = await browser.newContext(OPSI_KONTEKS);
@@ -62,7 +39,7 @@ test.afterAll(async () => {
 });
 
 test("1. login SECURITY di HP", async () => {
-  await login(sec, "secA");
+  await masuk(sec, "secA");
   await sec.goto("/beranda");
   await expect(sec.getByRole("button", { name: /TOMBOL DARURAT/ })).toBeVisible();
 });
@@ -102,7 +79,7 @@ test("4. lapor insiden dari titik", async () => {
 
 test("5. tombol darurat: lepas <2 dtk tidak terkirim, tahan 2 dtk terkirim; banner Danru ≤15 dtk; Saya tangani", async () => {
   // Danru sudah membuka dashboard lebih dulu supaya yang diuji benar-benar auto-refresh.
-  await login(danru, "danruA");
+  await masuk(danru, "danruA");
   await danru.goto("/dashboard");
 
   await sec.goto("/beranda");
@@ -167,7 +144,7 @@ test("6. isolasi Regu B: Danru A tidak melihat data Regu B", async () => {
 
 test("7. CHIEF mengunduh Excel", async () => {
   const chief = await ctxChief.newPage();
-  await login(chief, "chief");
+  await masuk(chief, "chief");
   await chief.goto("/laporan");
   const [unduhan] = await Promise.all([
     chief.waitForEvent("download"),

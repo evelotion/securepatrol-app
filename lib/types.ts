@@ -21,6 +21,8 @@ export type CheckpointRow = {
   lat: string | null;
   long: string | null;
   keterangan: string | null;
+  /** Radius khusus titik (meter); null = bawaan sistem. */
+  radiusM: number | null;
   aktif: boolean;
   qrSvg: string;
 };
@@ -76,6 +78,8 @@ export type RuteTitikRow = {
   checkpointId: string;
   namaTitik: string;
   urutan: number;
+  /** Waktu tempuh minimum (detik) dari titik sebelumnya dalam putaran. */
+  minDetikDariSebelumnya: number;
 };
 
 /** Rute patroli + target putaran (F4-3). */

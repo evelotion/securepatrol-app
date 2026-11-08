@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ShieldCheck } from "lucide-react";
 
+import { HakCipta } from "@/components/hak-cipta";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { LoginForm } from "./login-form";
@@ -41,6 +42,7 @@ export default function LoginPage() {
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Butuh akses? Hubungi Super Admin gedung Anda.
         </p>
+        <HakCipta className="mt-2" />
       </div>
     </main>
   );

@@ -2,7 +2,7 @@ import "server-only";
 
 import { requireRole, type SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkpointTerlewat, hitungPutaran } from "@/lib/rute";
+import { checkpointTerlewat, hitungPutaran, putaranBerjalan } from "@/lib/rute";
 import { FIELD_ROLES, JADWAL_ROLES, MASTER_ROLES } from "@/lib/roles";
 import {
   awalPekan,
@@ -89,6 +89,7 @@ export async function listRute(): Promise<RuteRow[]> {
       checkpointId: t.checkpointId,
       namaTitik: t.checkpoint.namaTitik,
       urutan: t.urutan,
+      minDetikDariSebelumnya: t.minDetikDariSebelumnya,
     })),
   }));
 }
@@ -276,6 +277,43 @@ export async function getRuteHariIni(
         waktu: t.waktu?.toISOString() ?? null,
       })),
     })),
+  };
+}
+
+/**
+ * Anti titik palsu: konteks waktu tempuh untuk satu scan. Mengembalikan batas
+ * minimum (detik) titik ini pada rute aktif staf dan jendela putaran yang
+ * sedang berjalan, atau null bila staf tak punya jadwal/rute, titik tidak ada
+ * di rute, atau sedang di luar putaran (aturan tidak berlaku).
+ */
+export async function getKonteksWaktuTempuh(
+  userId: string,
+  checkpointId: string,
+  now: Date,
+): Promise<{ minDetik: number; mulai: Date; selesai: Date } | null> {
+  const tanggal = tanggalWIB(now);
+  const jadwal = await prisma.jadwal.findUnique({
+    where: { userId_tanggal: { userId, tanggal: tanggalDB(tanggal) } },
+    include: { shift: true },
+  });
+  if (!jadwal?.aktif || !jadwal.shift.aktif) return null;
+
+  const rute = await ambilRuteHariIni(jadwal.shiftId);
+  const titik = rute?.titik.find((t) => t.checkpointId === checkpointId);
+  if (!rute || !titik) return null;
+
+  const putaran = putaranBerjalan({
+    rute,
+    shift: jadwal.shift,
+    tanggal,
+    sekarang: now,
+  });
+  if (!putaran) return null;
+
+  return {
+    minDetik: titik.minDetikDariSebelumnya,
+    mulai: putaran.mulai,
+    selesai: putaran.selesai,
   };
 }
 
