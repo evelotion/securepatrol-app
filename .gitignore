@@ -51,3 +51,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# akun uji lokal (berisi password)
+/.tmp-uji/
