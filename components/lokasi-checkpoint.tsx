@@ -7,6 +7,7 @@ import { Crosshair, Link2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { parseRadius, RADIUS_MAKS_M, RADIUS_MIN_M } from "@/lib/geo";
 import {
   formatKoordinat,
   gabungkanSampelGps,
@@ -69,18 +70,26 @@ type StatusGps =
 export function LokasiCheckpoint({
   latAwal,
   longAwal,
-  radiusM,
+  radiusBawaanM,
+  radiusAwalM,
   errorLat,
   errorLong,
+  errorRadius,
 }: {
   latAwal: string | null;
   longAwal: string | null;
-  radiusM: number;
+  /** Radius sistem (PATROL_RADIUS_M) bila radius titik dikosongkan. */
+  radiusBawaanM: number;
+  radiusAwalM: number | null;
   errorLat?: string;
   errorLong?: string;
+  errorRadius?: string;
 }) {
   const [lat, setLat] = useState(latAwal ?? "");
   const [long, setLong] = useState(longAwal ?? "");
+  const [radiusTeks, setRadiusTeks] = useState(
+    radiusAwalM === null ? "" : String(radiusAwalM),
+  );
   const [gps, setGps] = useState<StatusGps>({ fase: "diam" });
   const [tautan, setTautan] = useState("");
   const [infoTautan, setInfoTautan] = useState<{
@@ -88,6 +97,10 @@ export function LokasiCheckpoint({
     pesan: string;
   } | null>(null);
 
+  // Lingkaran peta mengikuti isian; bila kosong/tidak valid memakai radius bawaan.
+  const radiusParse = parseRadius(radiusTeks);
+  const radiusM =
+    radiusParse.ok && radiusParse.nilai !== null ? radiusParse.nilai : radiusBawaanM;
   const latAngka = keAngka(lat);
   const longAngka = keAngka(long);
 
@@ -203,6 +216,37 @@ export function LokasiCheckpoint({
         <p className="text-xs text-muted-foreground">
           Lingkaran biru = radius scan valid ({radiusM} m dari titik).
         </p>
+      </div>
+
+      <div className="field">
+        <label className="field-label" htmlFor="radiusM">
+          Radius titik (meter){" "}
+          <span className="normal-case">
+            (opsional, kosong = bawaan {radiusBawaanM} m)
+          </span>
+        </label>
+        <Input
+          id="radiusM"
+          name="radiusM"
+          type="number"
+          inputMode="numeric"
+          min={RADIUS_MIN_M}
+          max={RADIUS_MAKS_M}
+          value={radiusTeks}
+          onChange={(e) => setRadiusTeks(e.target.value)}
+          placeholder={String(radiusBawaanM)}
+          aria-invalid={Boolean(errorRadius) || !radiusParse.ok}
+          className="mono-num"
+        />
+        <p className="text-xs text-muted-foreground">
+          Persempit untuk titik di dalam gedung (mis. 30 m) agar scan dari titik
+          lain di gedung yang sama tidak lolos.
+        </p>
+        {errorRadius || !radiusParse.ok ? (
+          <p className="field-error">
+            {errorRadius ?? (radiusParse.ok ? "" : radiusParse.error)}
+          </p>
+        ) : null}
       </div>
 
       <div className="field">

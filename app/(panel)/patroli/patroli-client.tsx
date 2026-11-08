@@ -172,7 +172,7 @@ export function PatroliClient({
                 <CameraCapture
                   value={foto}
                   onChange={setFoto}
-                  watermark={patrolWatermark(gps.posisi, actorName)}
+                  watermark={patrolWatermark(gps.posisi, actorName, titik?.namaTitik ?? kode)}
                   label="Foto Area"
                   facing="environment"
                   hero
@@ -384,9 +384,10 @@ export function PatroliClient({
 function patrolWatermark(
   position: Posisi | null,
   actorName: string,
+  namaTitik: string,
 ): string {
   const location = position
     ? `${position.lat.toFixed(6)}, ${position.long.toFixed(6)}`
     : "Lokasi GPS tidak tersedia";
-  return `${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}\n${location}\n${actorName}`;
+  return `${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}\n${namaTitik}\n${location}\n${actorName}`;
 }

@@ -476,7 +476,9 @@ function CheckpointForm({
       <LokasiCheckpoint
         latAwal={checkpoint?.lat ?? null}
         longAwal={checkpoint?.long ?? null}
-        radiusM={radiusM}
+        radiusBawaanM={radiusM}
+        radiusAwalM={checkpoint?.radiusM ?? null}
+        errorRadius={state?.errors?.radiusM}
         errorLat={state?.errors?.lat}
         errorLong={state?.errors?.long}
       />

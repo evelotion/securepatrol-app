@@ -115,3 +115,19 @@ export function checkpointTerlewat(putaran: PutaranProgress[]): Set<string> {
   }
   return hasil;
 }
+
+/**
+ * Putaran yang sedang berjalan pada `sekarang` (jendela waktunya), atau null
+ * bila tidak ada (di luar shift, atau di celah setelah putaran terakhir).
+ * Dipakai anti titik palsu: "putaran yang sama" = jendela ini.
+ */
+export function putaranBerjalan(input: {
+  rute: { targetPutaran: number; intervalMenit: number };
+  shift: ShiftJam;
+  tanggal: string;
+  sekarang: Date;
+}): { putaran: number; mulai: Date; selesai: Date } | null {
+  const jendela = hitungPutaran({ ...input, titik: [], logs: [] });
+  const p = jendela.find((w) => w.status === "BERJALAN");
+  return p ? { putaran: p.putaran, mulai: p.mulai, selesai: p.selesai } : null;
+}

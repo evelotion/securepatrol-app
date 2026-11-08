@@ -22,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { HakCipta } from "@/components/hak-cipta";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sidebar,
@@ -161,6 +162,7 @@ export function AppSidebar({
           <ThemeToggle className="size-10 shrink-0" />
         </div>
         <LogoutButton />
+        <HakCipta className="pt-1" />
       </SidebarFooter>
     </Sidebar>
   );

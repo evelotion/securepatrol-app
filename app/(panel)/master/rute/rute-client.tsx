@@ -205,7 +205,10 @@ function RuteFormSheet({
   );
 }
 
-type Pilihan = Record<string, { pilih: boolean; urutan: string }>;
+type Pilihan = Record<
+  string,
+  { pilih: boolean; urutan: string; minDetik: string }
+>;
 
 function awalPilihan(
   rute: RuteRow | null,
@@ -217,6 +220,7 @@ function awalPilihan(
     hasil[cp.id] = {
       pilih: titik !== undefined,
       urutan: String(titik?.urutan ?? ""),
+      minDetik: String(titik?.minDetikDariSebelumnya ?? 60),
     };
   }
   return hasil;
@@ -339,7 +343,12 @@ function RuteForm({
       </div>
 
       <fieldset className="field">
-        <legend className="field-label">Titik & urutan</legend>
+        <legend className="field-label">Titik, urutan & waktu tempuh minimum</legend>
+        <p className="text-xs text-muted-foreground">
+          Kolom kanan = detik minimum dari scan titik sebelumnya dalam putaran
+          yang sama (bawaan 60). Scan yang lebih cepat dinilai tidak valid;
+          isi 0 untuk mematikan.
+        </p>
         {checkpoints.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Belum ada checkpoint. Tambah titik di Master Checkpoint dahulu.
@@ -376,6 +385,17 @@ function RuteForm({
                   aria-label={`Urutan ${cp.namaTitik}`}
                   placeholder="—"
                   className="mono-num w-16 shrink-0"
+                />
+                <Input
+                  name={`min_${cp.id}`}
+                  type="number"
+                  min={0}
+                  max={3600}
+                  value={pilihan[cp.id]?.minDetik ?? "60"}
+                  onChange={(e) => ubah(cp.id, { minDetik: e.target.value })}
+                  aria-label={`Waktu tempuh minimum ${cp.namaTitik} (detik)`}
+                  title="Waktu tempuh minimum dari titik sebelumnya (detik)"
+                  className="mono-num w-20 shrink-0"
                 />
               </li>
             ))}

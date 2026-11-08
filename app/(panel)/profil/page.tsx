@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { UserRound } from "lucide-react";
 
+import { HakCipta } from "@/components/hak-cipta";
 import { ThemeIkutSistem, ThemeToggle } from "@/components/theme-toggle";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,6 +137,8 @@ async function ProfilSection() {
         <h2 className="section-title">Keluar</h2>
         <LogoutButton />
       </Card>
+
+      <HakCipta className="pb-2 pt-1" />
     </div>
   );
 }

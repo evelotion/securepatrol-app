@@ -2,6 +2,7 @@
   "name": "securepatrol-app",
   "version": "0.1.0",
   "private": true,
+  "author": "Indra Dwi Ananda",
   "scripts": {
     "dev": "next dev",
     "prebuild": "prisma generate",

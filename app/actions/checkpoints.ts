@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/auth";
 import { toJson, writeAudit } from "@/lib/audit";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
+import { parseRadius } from "@/lib/geo";
 import { prisma } from "@/lib/prisma";
 import { MASTER_ROLES } from "@/lib/roles";
 
@@ -17,6 +18,7 @@ type CheckpointInput = {
   lat: string;
   long: string;
   keterangan: string;
+  radiusM: string;
 };
 
 function validate(
@@ -47,12 +49,21 @@ function validate(
   if (long !== null && (Number.isNaN(long) || long < -180 || long > 180)) {
     errors.long = "Longitude harus antara -180 sampai 180.";
   }
+  const radius = parseRadius(input.radiusM);
+  if (!radius.ok) errors.radiusM = radius.error;
+
   if ((lat === null) !== (long === null)) {
     errors.lat = "Latitude dan longitude harus diisi bersamaan.";
     errors.long = "Latitude dan longitude harus diisi bersamaan.";
   }
 
   return errors;
+}
+
+/** Nilai radius untuk DB (sudah divalidasi): kosong -> null. */
+function radiusDb(mentah: string): number | null {
+  const hasil = parseRadius(mentah);
+  return hasil.ok ? hasil.nilai : null;
 }
 
 function genCode(): string {
@@ -72,6 +83,7 @@ export async function createCheckpoint(
     lat: str(formData.get("lat")),
     long: str(formData.get("long")),
     keterangan: str(formData.get("keterangan")),
+    radiusM: str(formData.get("radiusM")),
   };
 
   const errors = validate(input);
@@ -93,6 +105,7 @@ export async function createCheckpoint(
       lat,
       long,
       keterangan: input.keterangan || null,
+      radiusM: radiusDb(input.radiusM),
     },
   });
 
@@ -126,6 +139,7 @@ export async function updateCheckpoint(
     lat: str(formData.get("lat")),
     long: str(formData.get("long")),
     keterangan: str(formData.get("keterangan")),
+    radiusM: str(formData.get("radiusM")),
   };
 
   // F1-5 — update wajib menerima kode barcode terisi & lolos regex.
@@ -154,6 +168,7 @@ export async function updateCheckpoint(
       lat,
       long,
       keterangan: input.keterangan || null,
+      radiusM: radiusDb(input.radiusM),
     },
   });
 

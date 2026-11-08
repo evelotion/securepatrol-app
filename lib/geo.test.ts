@@ -4,7 +4,11 @@ import {
   PATROL_MAX_ACCURACY_M,
   PATROL_MAX_SPEED_MPS,
   PATROL_MIN_INTERVAL_MS,
+  ALASAN_TERLALU_CEPAT,
+  MIN_DETIK_BAWAAN,
   PATROL_RADIUS_M,
+  parseRadius,
+  terlaluCepat,
   validasiScan,
   type ValidasiScanInput,
 } from "./geo";
@@ -178,5 +182,106 @@ describe("validasiScan — tujuh aturan spec Fase 2", () => {
     expect(PATROL_MAX_ACCURACY_M).toBeGreaterThan(0);
     expect(PATROL_RADIUS_M).toBeGreaterThan(0);
     expect(PATROL_MAX_SPEED_MPS).toBe(3);
+  });
+});
+
+describe("radius per titik", () => {
+  // ~0,0009 derajat lintang = ~100 m.
+  const JAUH_150M = { lat: -6.2 + 0.00135, long: 106.8 };
+
+  it("radius titik lebih besar dari bawaan menerima scan yang sebelumnya di luar radius", () => {
+    expect(evaluasi({ posisiHP: JAUH_150M }).alasan).toBe("di luar radius");
+    expect(evaluasi({ posisiHP: JAUH_150M, radiusM: 200 }).status).toBe("VALID");
+  });
+
+  it("radius titik lebih kecil dari bawaan menolak scan yang sebelumnya valid", () => {
+    const dekat = { lat: -6.2 + 0.00045, long: 106.8 }; // ~50 m
+    expect(evaluasi({ posisiHP: dekat }).status).toBe("VALID");
+    expect(evaluasi({ posisiHP: dekat, radiusM: 30 })).toMatchObject({
+      status: "TIDAK_VALID",
+      alasan: "di luar radius",
+    });
+  });
+});
+
+describe("terlaluCepat — waktu tempuh minimum antar titik", () => {
+  const SEKARANG = new Date("2026-10-27T10:00:00.000Z");
+  const lalu = (detik: number) => new Date(SEKARANG.getTime() - detik * 1000);
+
+  it("lebih cepat dari batas -> true; tepat di batas atau lebih lambat -> false", () => {
+    expect(terlaluCepat(SEKARANG, { minDetik: 60, scanSebelumnyaDiPutaran: lalu(59) })).toBe(true);
+    expect(terlaluCepat(SEKARANG, { minDetik: 60, scanSebelumnyaDiPutaran: lalu(60) })).toBe(false);
+    expect(terlaluCepat(SEKARANG, { minDetik: 60, scanSebelumnyaDiPutaran: lalu(300) })).toBe(false);
+  });
+
+  it("tanpa scan sebelumnya, tanpa konteks rute, atau batas 0 -> tidak berlaku", () => {
+    expect(terlaluCepat(SEKARANG, { minDetik: 60, scanSebelumnyaDiPutaran: null })).toBe(false);
+    expect(terlaluCepat(SEKARANG, null)).toBe(false);
+    expect(terlaluCepat(SEKARANG, undefined)).toBe(false);
+    expect(terlaluCepat(SEKARANG, { minDetik: 0, scanSebelumnyaDiPutaran: lalu(1) })).toBe(false);
+  });
+
+  it("nilai bawaan 60 detik", () => {
+    expect(MIN_DETIK_BAWAAN).toBe(60);
+  });
+
+  it("scan valid secara GPS tapi terlalu cepat -> TIDAK_VALID dengan alasan baku", () => {
+    const hasil = evaluasi({
+      waktuTempuh: { minDetik: 60, scanSebelumnyaDiPutaran: lalu(20) },
+    });
+    expect(hasil).toMatchObject({
+      ditolak: false,
+      status: "TIDAK_VALID",
+      alasan: ALASAN_TERLALU_CEPAT,
+      jarakM: 0,
+    });
+  });
+
+  it("scan cukup lambat tetap VALID", () => {
+    expect(
+      evaluasi({ waktuTempuh: { minDetik: 60, scanSebelumnyaDiPutaran: lalu(120) } }).status,
+    ).toBe("VALID");
+  });
+
+  it("alasan lain dipertahankan di belakang alasan terlalu cepat", () => {
+    const hasil = evaluasi({
+      akurasiM: PATROL_MAX_ACCURACY_M + 10,
+      waktuTempuh: { minDetik: 60, scanSebelumnyaDiPutaran: lalu(5) },
+    });
+    expect(hasil.status).toBe("TIDAK_VALID");
+    expect(hasil.alasan).toBe(ALASAN_TERLALU_CEPAT + "; akurasi GPS buruk");
+  });
+
+  it("titik tanpa koordinat yang dipindai terlalu cepat tidak lagi lolos sebagai BELUM_TERVERIFIKASI", () => {
+    const hasil = evaluasi({
+      posisiCheckpoint: null,
+      waktuTempuh: { minDetik: 60, scanSebelumnyaDiPutaran: lalu(10) },
+    });
+    expect(hasil).toMatchObject({ status: "TIDAK_VALID", alasan: ALASAN_TERLALU_CEPAT });
+  });
+
+  it("scan yang ditolak (tidak bertugas) tetap ditolak, tidak berubah jadi log", () => {
+    const hasil = evaluasi({
+      sedangBertugas: false,
+      waktuTempuh: { minDetik: 60, scanSebelumnyaDiPutaran: lalu(5) },
+    });
+    expect(hasil.ditolak).toBe(true);
+  });
+});
+
+describe("parseRadius", () => {
+  it("kosong = null (pakai bawaan)", () => {
+    expect(parseRadius("")).toEqual({ ok: true, nilai: null });
+    expect(parseRadius("  ")).toEqual({ ok: true, nilai: null });
+  });
+  it("menerima bilangan bulat dalam batas", () => {
+    expect(parseRadius("10")).toEqual({ ok: true, nilai: 10 });
+    expect(parseRadius("1000")).toEqual({ ok: true, nilai: 1000 });
+    expect(parseRadius(" 35 ")).toEqual({ ok: true, nilai: 35 });
+  });
+  it("menolak di luar batas, desimal, dan bukan angka", () => {
+    for (const buruk of ["9", "1001", "0", "-5", "25.5", "abc"]) {
+      expect(parseRadius(buruk).ok).toBe(false);
+    }
   });
 });

@@ -2,8 +2,8 @@
 // PRD: docs/PRD-SecurePatrol.md bagian 8 "Data yang Disimpan"
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
   moduleFormat = "esm"
 }
 
@@ -35,30 +35,30 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  nama      String
-  email     String   @unique
-  username  String?  @unique
+  id                 String   @id @default(cuid())
+  nama               String
+  email              String   @unique
+  username           String?  @unique
   /// Hash scrypt "salt:hash" — tidak pernah dikirim ke client.
-  password  String
-  role      Role     @default(SECURITY)
+  password           String
+  role               Role     @default(SECURITY)
   /// Tim/regu (mis. "Regu A").
-  regu      String?
+  regu               String?
   /// Soft delete: true = aktif, false = dinonaktifkan (tidak pernah hapus permanen).
-  aktif     Boolean  @default(true)
+  aktif              Boolean  @default(true)
   /// true = wajib ganti password saat login berikutnya (user baru buatan admin / reset admin).
-  harusGantiPassword Boolean @default(false) @map("harus_ganti_password")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  harusGantiPassword Boolean  @default(false) @map("harus_ganti_password")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
-  sessions    Session[]
-  absensi     Absensi[]
-  patroliLogs PatroliLog[]
-  auditLogs   AuditLog[]
-  fotos       Foto[]
-  jadwal      Jadwal[]
-  insidenDilaporkan Insiden[] @relation("InsidenPelapor")
-  insidenDitangani  Insiden[] @relation("InsidenPenangan")
+  sessions          Session[]
+  absensi           Absensi[]
+  patroliLogs       PatroliLog[]
+  auditLogs         AuditLog[]
+  fotos             Foto[]
+  jadwal            Jadwal[]
+  insidenDilaporkan Insiden[]    @relation("InsidenPelapor")
+  insidenDitangani  Insiden[]    @relation("InsidenPenangan")
 
   @@map("User")
 }
@@ -73,6 +73,8 @@ model Checkpoint {
   lat         Decimal? @db.Decimal(10, 7)
   long        Decimal? @db.Decimal(10, 7)
   keterangan  String?
+  /// Radius validasi GPS khusus titik ini (meter); null = PATROL_RADIUS_M.
+  radiusM     Int?     @map("radius_m")
   /// Soft delete.
   aktif       Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
@@ -86,17 +88,17 @@ model Checkpoint {
 }
 
 model Absensi {
-  id         String    @id @default(cuid())
-  userId     String    @map("user_id")
-  waktuMasuk DateTime  @map("waktu_masuk")
-  waktuKeluar DateTime? @map("waktu_keluar")
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  waktuMasuk  DateTime     @map("waktu_masuk")
+  waktuKeluar DateTime?    @map("waktu_keluar")
   /// Cloudinary public ID (atau base64 legacy sampai migrasi foto dijalankan).
-  fotoMasuk  String?   @map("foto_masuk")
-  fotoKeluar String?   @map("foto_keluar")
-  latMasuk   Decimal?  @db.Decimal(10, 7) @map("lat_masuk")
-  longMasuk  Decimal?  @db.Decimal(10, 7) @map("long_masuk")
-  latKeluar  Decimal?  @db.Decimal(10, 7) @map("lat_keluar")
-  longKeluar Decimal?  @db.Decimal(10, 7) @map("long_keluar")
+  fotoMasuk   String?      @map("foto_masuk")
+  fotoKeluar  String?      @map("foto_keluar")
+  latMasuk    Decimal?     @map("lat_masuk") @db.Decimal(10, 7)
+  longMasuk   Decimal?     @map("long_masuk") @db.Decimal(10, 7)
+  latKeluar   Decimal?     @map("lat_keluar") @db.Decimal(10, 7)
+  longKeluar  Decimal?     @map("long_keluar") @db.Decimal(10, 7)
   /// Jadwal shift yang berlaku saat absen (F4-2), diisi dari Jadwal hari itu.
   shiftId     String?      @map("shift_id")
   statusHadir StatusHadir? @map("status_hadir")
@@ -109,14 +111,14 @@ model Absensi {
 }
 
 model PatroliLog {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  checkpointId String   @map("checkpoint_id")
-  waktu        DateTime @default(now())
+  id           String     @id @default(cuid())
+  userId       String     @map("user_id")
+  checkpointId String     @map("checkpoint_id")
+  waktu        DateTime   @default(now())
   /// Cloudinary public ID (atau base64 legacy sampai migrasi foto dijalankan).
   foto         String?
-  lat          Decimal? @db.Decimal(10, 7)
-  long         Decimal? @db.Decimal(10, 7)
+  lat          Decimal?   @db.Decimal(10, 7)
+  long         Decimal?   @db.Decimal(10, 7)
   /// Status dan alasan validasi patroli (Fase 2).
   status       StatusScan @default(VALID)
   akurasiM     Int?       @map("akurasi_m")
@@ -163,11 +165,11 @@ model LoginAttempt {
 
 /// Metadata foto private yang disimpan di Cloudinary.
 model Foto {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  mime      String
-  ukuran    Int
-  userId    String   @map("user_id")
+  id         String   @id @default(cuid())
+  key        String   @unique
+  mime       String
+  ukuran     Int
+  userId     String   @map("user_id")
   dibuatPada DateTime @default(now()) @map("dibuat_pada")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -235,10 +237,13 @@ model Rute {
 
 /// Urutan titik dalam satu rute.
 model RuteTitik {
-  id           String @id @default(cuid())
-  ruteId       String @map("rute_id")
-  checkpointId String @map("checkpoint_id")
-  urutan       Int
+  id                     String @id @default(cuid())
+  ruteId                 String @map("rute_id")
+  checkpointId           String @map("checkpoint_id")
+  urutan                 Int
+  /// Waktu tempuh minimum (detik) dari scan titik sebelumnya dalam putaran yang sama.
+  /// Scan lebih cepat dari ini dinilai TIDAK_VALID (anti titik palsu).
+  minDetikDariSebelumnya Int    @default(60) @map("min_detik_dari_sebelumnya")
 
   rute       Rute       @relation(fields: [ruteId], references: [id], onDelete: Cascade)
   checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
@@ -289,22 +294,22 @@ enum StatusInsiden {
 /// Laporan insiden (F4-4) dan sinyal darurat (F4-5).
 /// `fotoKeys` berisi key Foto (Cloudinary private), bukan gambar.
 model Insiden {
-  id                   String           @id @default(cuid())
-  userId               String           @map("user_id")
-  kategori             KategoriInsiden
-  prioritas            PrioritasInsiden
-  deskripsi            String
-  fotoKeys             String[]         @map("foto_keys")
-  lat                  Decimal?         @db.Decimal(10, 7)
-  long                 Decimal?         @db.Decimal(10, 7)
-  akurasiM             Int?             @map("akurasi_m")
-  checkpointId         String?          @map("checkpoint_id")
-  status               StatusInsiden    @default(BARU)
-  ditanganiOleh        String?          @map("ditangani_oleh")
-  ditanganiPada        DateTime?        @map("ditangani_pada")
-  catatanTindakLanjut  String?          @map("catatan_tindak_lanjut")
-  createdAt            DateTime         @default(now()) @map("created_at")
-  updatedAt            DateTime         @updatedAt @map("updated_at")
+  id                  String           @id @default(cuid())
+  userId              String           @map("user_id")
+  kategori            KategoriInsiden
+  prioritas           PrioritasInsiden
+  deskripsi           String
+  fotoKeys            String[]         @map("foto_keys")
+  lat                 Decimal?         @db.Decimal(10, 7)
+  long                Decimal?         @db.Decimal(10, 7)
+  akurasiM            Int?             @map("akurasi_m")
+  checkpointId        String?          @map("checkpoint_id")
+  status              StatusInsiden    @default(BARU)
+  ditanganiOleh       String?          @map("ditangani_oleh")
+  ditanganiPada       DateTime?        @map("ditangani_pada")
+  catatanTindakLanjut String?          @map("catatan_tindak_lanjut")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
   user       User        @relation("InsidenPelapor", fields: [userId], references: [id], onDelete: Cascade)
   penangan   User?       @relation("InsidenPenangan", fields: [ditanganiOleh], references: [id], onDelete: SetNull)

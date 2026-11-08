@@ -15,6 +15,7 @@ import {
 
 import { AutoRefresh } from "@/components/auto-refresh";
 import { DaruratBanner } from "@/components/darurat-banner";
+import { PanelScanMencurigakan } from "@/components/panel-scan-mencurigakan";
 import { StatusScanBadge } from "@/components/status-scan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,9 +31,11 @@ import {
 
 import { getDashboardHariIni } from "@/lib/data";
 import { getDaruratAktif } from "@/lib/data-insiden";
+import { getScanMencurigakan } from "@/lib/data-mencurigakan";
+import { tambahHari } from "@/lib/shift";
 import { formatJam, formatTanggal } from "@/lib/format";
 import { isManager } from "@/lib/roles";
-import { startOfHariWIB } from "@/lib/waktu";
+import { startOfHariWIB, tanggalWIB } from "@/lib/waktu";
 import { labelStatusScan, persenProgres, type Tone } from "@/lib/ui";
 
 export const metadata = { title: "Dashboard" };
@@ -84,7 +87,17 @@ async function Dashboard() {
   if (!isManager(actor.role)) redirect("/beranda");
 
   const { summary, absensi, checkpoints, logs } = data;
-  const darurat = await getDaruratAktif(actor);
+  const sampaiTgl = tanggalWIB(new Date());
+  const [darurat, mencurigakan] = await Promise.all([
+    getDaruratAktif(actor),
+    // 7 hari terakhir; Danru otomatis hanya regunya (scope di server).
+    getScanMencurigakan({
+      dari: tambahHari(sampaiTgl, -6),
+      sampai: sampaiTgl,
+      regu: "",
+      userId: "",
+    }),
+  ]);
   const persen = persenProgres(
     summary.checkpointTerpatroli,
     summary.totalCheckpointAktif,
@@ -162,6 +175,8 @@ async function Dashboard() {
           </Card>
         ))}
       </section>
+
+      <PanelScanMencurigakan data={mencurigakan} keterangan="7 hari terakhir" />
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="p-5 xl:col-span-2">
