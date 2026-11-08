@@ -82,6 +82,15 @@ export type WaktuTempuhInput = {
 /** Alasan baku untuk scan yang terlalu cepat; dipakai juga oleh panel Scan mencurigakan. */
 export const ALASAN_TERLALU_CEPAT = "terlalu cepat dari titik sebelumnya";
 
+/**
+ * Fallback anti titik palsu: jeda minimum global (detik) antar scan ke
+ * checkpoint BERBEDA bagi petugas tanpa rute/jadwal aktif. Env PATROL_MIN_JEDA_DETIK.
+ */
+export const PATROL_MIN_JEDA_DETIK =
+  Number(process.env.PATROL_MIN_JEDA_DETIK ?? "") > 0
+    ? Number(process.env.PATROL_MIN_JEDA_DETIK)
+    : 30;
+
 /** Batas bawah bawaan waktu tempuh antar titik (detik). */
 export const MIN_DETIK_BAWAAN = 60;
 

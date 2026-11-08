@@ -122,7 +122,7 @@ BASE_URL=https://<preview>.vercel.app npm run test:e2e
 
 GPS di dalam gedung tidak membedakan titik/lantai, jadi petugas bisa memotret semua QR lalu memindainya dari satu tempat. Lapisan pengaman:
 
-- **Waktu tempuh minimum:** `RuteTitik.min_detik_dari_sebelumnya` (bawaan 60 detik, diatur per titik di Master Rute; 0 = mati). Scan yang lebih cepat dari batas itu sejak scan sebelumnya oleh petugas yang sama dalam putaran rute yang sama dinilai **TIDAK_VALID** dengan alasan `terlalu cepat dari titik sebelumnya`. Aturan tidak berlaku bila petugas tak punya jadwal/rute aktif, titik tidak ada di rute, atau sedang di luar jendela putaran.
+- **Waktu tempuh minimum:** `RuteTitik.min_detik_dari_sebelumnya` (bawaan 60 detik, diatur per titik di Master Rute; 0 = mati). Scan yang lebih cepat dari batas itu sejak scan sebelumnya oleh petugas yang sama dalam putaran rute yang sama dinilai **TIDAK_VALID** dengan alasan `terlalu cepat dari titik sebelumnya`. Bila petugas tak punya jadwal/rute aktif, titik tidak ada di rute, atau sedang di luar jendela putaran, berlaku **jeda global** `PATROL_MIN_JEDA_DETIK` (bawaan 30 detik) antar scan ke checkpoint berbeda, dengan hasil dan alasan yang sama.
 - **Radius per titik:** `Checkpoint.radius_m` (opsional, 10–1000 m; kosong = `PATROL_RADIUS_M`). Diatur di form checkpoint; lingkaran di peta mengikuti nilainya.
 - **Foto langsung dari kamera:** tidak ada input file/galeri; foto digambar dari `getUserMedia` ke canvas dan selalu diberi watermark (waktu, titik, koordinat, nama). Dijaga oleh `lib/foto-kamera.test.ts`.
 - **Panel "Scan mencurigakan":** di Dashboard (7 hari terakhir) dan Laporan (sesuai rentang) untuk Danru/Chief. Danru hanya melihat regunya.

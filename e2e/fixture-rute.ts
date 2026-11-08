@@ -16,6 +16,19 @@ function hariWib(): string {
   return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
 }
 
+/** Hanya titik UJI-002 (tanpa rute/jadwal) untuk uji fallback jeda global. */
+export async function siapkanTitikTanpaRuteE2E(): Promise<void> {
+  await bersihkanRuteE2E();
+  await denganDb(async (db) => {
+    await db.query(
+      `INSERT INTO "Checkpoint" (id, nama_titik, kode_barcode, aktif, created_at, updated_at)
+       VALUES (gen_random_uuid()::text, $1, $2, true, now(), now())
+       ON CONFLICT (kode_barcode) DO NOTHING`,
+      [TITIK_E2E[0].nama, TITIK_E2E[0].kode],
+    );
+  });
+}
+
 /** UJI-002 memakai batas bawaan 60 dtk, UJI-003 batas 0 (dimatikan admin). */
 export async function siapkanRuteE2E(): Promise<void> {
   await bersihkanRuteE2E();

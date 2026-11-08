@@ -6,6 +6,7 @@ import {
   PATROL_MIN_INTERVAL_MS,
   ALASAN_TERLALU_CEPAT,
   MIN_DETIK_BAWAAN,
+  PATROL_MIN_JEDA_DETIK,
   PATROL_RADIUS_M,
   parseRadius,
   terlaluCepat,
@@ -283,5 +284,37 @@ describe("parseRadius", () => {
     for (const buruk of ["9", "1001", "0", "-5", "25.5", "abc"]) {
       expect(parseRadius(buruk).ok).toBe(false);
     }
+  });
+});
+
+describe("fallback jeda global (tanpa rute/jadwal)", () => {
+  const SEKARANG = new Date("2026-10-27T10:00:00.000Z");
+  const lalu = (detik: number) => new Date(SEKARANG.getTime() - detik * 1000);
+  // Action memakai PATROL_MIN_JEDA_DETIK saat konteks rute tidak ada.
+  const fallback = (detik: number) => ({
+    minDetik: PATROL_MIN_JEDA_DETIK,
+    scanSebelumnyaDiPutaran: lalu(detik),
+  });
+
+  it("bawaan 30 detik bila env tidak diatur", () => {
+    expect(PATROL_MIN_JEDA_DETIK).toBe(30);
+  });
+
+  it("scan ke titik lain lebih cepat dari jeda global -> TIDAK_VALID", () => {
+    expect(evaluasi({ waktuTempuh: fallback(10) })).toMatchObject({
+      status: "TIDAK_VALID",
+      alasan: ALASAN_TERLALU_CEPAT,
+    });
+  });
+
+  it("tepat di batas atau lebih lambat tetap VALID", () => {
+    expect(evaluasi({ waktuTempuh: fallback(PATROL_MIN_JEDA_DETIK) }).status).toBe("VALID");
+    expect(evaluasi({ waktuTempuh: fallback(120) }).status).toBe("VALID");
+  });
+
+  it("tanpa scan sebelumnya dalam jendela jeda -> tidak ditandai", () => {
+    expect(
+      evaluasi({ waktuTempuh: { minDetik: PATROL_MIN_JEDA_DETIK, scanSebelumnyaDiPutaran: null } }).status,
+    ).toBe("VALID");
   });
 });

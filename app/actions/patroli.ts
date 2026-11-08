@@ -7,7 +7,7 @@ import { writeAudit } from "@/lib/audit";
 import { formatJam, parseKoordinat } from "@/lib/bukti";
 import type { FormState } from "@/lib/form";
 import { str } from "@/lib/form";
-import { validasiScan, type Koordinat } from "@/lib/geo";
+import { PATROL_MIN_JEDA_DETIK, validasiScan, type Koordinat } from "@/lib/geo";
 import { getKonteksWaktuTempuh } from "@/lib/data-jadwal";
 import { prisma } from "@/lib/prisma";
 import { FIELD_ROLES } from "@/lib/roles";
@@ -86,16 +86,21 @@ export async function catatPatroli(
     ]);
 
   // Anti titik palsu: scan terakhir user ini di putaran yang sama (titik apa pun).
-  const scanSebelumnyaDiPutaran = konteksTempuh
-    ? await prisma.patroliLog.findFirst({
-        where: {
+  // Tanpa rute/jadwal aktif: fallback jeda global ke checkpoint BERBEDA.
+  const scanSebelumnyaDiPutaran = await prisma.patroliLog.findFirst({
+    where: konteksTempuh
+      ? { userId: actor.id, waktu: { gte: konteksTempuh.mulai, lt: now } }
+      : {
           userId: actor.id,
-          waktu: { gte: konteksTempuh.mulai, lt: now },
+          checkpointId: { not: checkpoint.id },
+          waktu: {
+            gte: new Date(now.getTime() - PATROL_MIN_JEDA_DETIK * 1000),
+            lt: now,
+          },
         },
-        orderBy: { waktu: "desc" },
-        select: { waktu: true },
-      })
-    : null;
+    orderBy: { waktu: "desc" },
+    select: { waktu: true },
+  });
 
   const posisiCheckpoint: Koordinat | null =
     checkpoint.lat === null || checkpoint.long === null
@@ -129,12 +134,10 @@ export async function catatPatroli(
     scanCheckpointSebelumnya: scanCheckpointSebelumnya?.waktu ?? null,
     sedangBertugas: absensiTerbuka !== null,
     ...(checkpoint.radiusM !== null ? { radiusM: checkpoint.radiusM } : {}),
-    waktuTempuh: konteksTempuh
-      ? {
-          minDetik: konteksTempuh.minDetik,
-          scanSebelumnyaDiPutaran: scanSebelumnyaDiPutaran?.waktu ?? null,
-        }
-      : null,
+    waktuTempuh: {
+      minDetik: konteksTempuh?.minDetik ?? PATROL_MIN_JEDA_DETIK,
+      scanSebelumnyaDiPutaran: scanSebelumnyaDiPutaran?.waktu ?? null,
+    },
   });
 
   // Cooldown dan syarat sedang bertugas menolak request tanpa menyimpan log.
