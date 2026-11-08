@@ -101,3 +101,18 @@ Perintah lain: `npm run test`, `npm run typecheck`, `npm run lint`, `npm run bui
 2. Set env di Vercel (Production: Neon branch `main`; Preview: Neon branch `dev`), termasuk `CRON_SECRET`.
 3. Setelah PR di-merge, jalankan `npx prisma migrate deploy` terhadap database Production.
 4. Uji kamera dan GPS di HP lewat HTTPS (URL Preview/Production), bukan localhost.
+
+## Tes E2E (Playwright)
+
+Tes alur lapangan HP (login → absen masuk → patroli → insiden → tombol darurat → banner Danru → isolasi regu → Excel → absen keluar) ada di `e2e/`. Chromium mobile (Pixel 7) dengan kamera palsu (`--use-fake-device-for-media-stream`) dan GPS tiruan.
+
+```bash
+npx playwright install chromium          # sekali saja
+npm run test:e2e                          # target default http://localhost:3000
+BASE_URL=https://<preview>.vercel.app npm run test:e2e
+```
+
+- Butuh `DATABASE_URL` (untuk setup/teardown) dan akun `uji.*@uji.test`. Password dibaca dari `E2E_PASSWORD_SEC_A`, `E2E_PASSWORD_DANRU_A`, `E2E_PASSWORD_CHIEF`, atau `.tmp-uji/akun.txt`.
+- Setup/teardown hanya menghapus absensi, patroli, insiden, dan foto milik `uji.sec.a@uji.test` (AuditLog tidak dihapus). `DATABASE_URL` harus menunjuk DB yang sama dengan `BASE_URL`.
+- Yang ditiru: kamera (pola uji, bukan QR), GPS, dan hasil scan QR (kolom kode diisi langsung). Unggahan foto ke Cloudinary nyata, tidak di-mock; asetnya tetap tinggal di Cloudinary.
+- CI (`.github/workflows/ci.yml`) hanya menjalankan typecheck, lint, dan unit test. E2E dijalankan manual.
