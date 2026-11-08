@@ -40,3 +40,4 @@ Urutan PR mengikuti docs/SPEC-perbaikan.md.
 - Merge PR bertingkat (stacked): merge dari yang paling bawah dan ubah base PR berikutnya ke `main` dulu. Merge ke branch induk yang sudah masuk `main` tidak membawa perubahannya ke `main`.
 - Env Vercel yang baru ditambah (mis. `CRON_SECRET`) baru berlaku setelah redeploy.
 - Redirect dan `notFound()` di dalam Suspense mengembalikan status HTTP 200 dengan isi pengalihan/404, bukan 307/404. Jangan menguji akses halaman hanya dari status HTTP; periksa isinya.
+- Region function Vercel = `sin1` (Singapura), sejalan dengan DB Neon di ap-southeast-1. Diatur lewat `regions` di vercel.json; tanpa itu function jalan di iad1 (AS) dan tiap query DB lintas benua.
